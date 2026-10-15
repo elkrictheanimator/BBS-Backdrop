@@ -1,26 +1,36 @@
-# BBS Banner (test builds)
+# Backdrop (test builds)
 
-An addon for BBS-RE that plays a **video with sound** in the banner of the landing screen.
+Video **with sound** behind BBS, and **Spotify** in it. / Video có tiếng làm nền cho BBS, kèm Spotify.
 
-**Status: test builds, not public yet.**
+Works as a plain Fabric mod (1.20.4) — no BBS addon API needed — so it targets BBS 2.0+, BBS FS 2.5.2–2.7 and BBS-RE.
+Hạn chế: chưa thử trên máy thật, hãy báo lỗi kèm log.
 
-## Using it
+## Use / Cách dùng
 
-1. Put the addon jar in `mods/` next to BBS-RE (Fabric 1.20.4).
-2. Put a video (`.mp4`, H.264, 720p or less works best) in `assets/video/` of BBS.
-3. Open BBS settings, category **bbsbanner**:
-   - `video`: the file name, e.g. `banner.mp4`
-   - `url`: or a web address — a direct `.mp4` / `.webm` link, or a YouTube link (needs [yt-dlp](https://github.com/yt-dlp/yt-dlp/releases/latest) on the PATH). A link wins over the file.
-   - `volume`: 0 to 1. 0 keeps it silent.
-   - `sync_offset`: milliseconds. If the sound comes **before** the picture use a positive number; if it comes **after**, a negative one.
-4. ffmpeg must be set up in BBS (Settings → video encoder path).
+1. Put the jar in `mods/` (needs Fabric API and ffmpeg; BBS's ffmpeg path is reused, or `/backdrop ffmpeg <path>`).
+2. Put videos (`.mp4`, H.264, ≤720p) in BBS `assets/video/`.
+3. In game, chat commands (everything is saved in `config/backdrop.json`):
 
-## How the sync works
+```
+/backdrop videos
+/backdrop wallpaper video <file> | url <mp4 link> | on | off | clear | volume 0-1 | sync <ms>
+/backdrop banner    video <file> | url <mp4 link> | on | off | clear | volume 0-1 | sync <ms>
+/backdrop darkness 0-1      (veil over the wallpaper)
+/backdrop panels 0-1        (panel opacity, BBS-RE only)
+```
 
-The sound is the clock. The picture is decoded ahead and the frame whose time has come is shown;
-late frames are dropped rather than letting the picture fall behind the sound.
+The **wallpaper** shows behind every editor, the film editor included. The **banner** replaces the landing-screen banner (only where that screen has one).
+`sync`: positive when the sound comes before the picture, negative when after.
 
-## Building
+## Spotify
 
-The build needs BBS-RE in the local Maven: `./gradlew publishToMavenLocal` in BBS-RE, then `./gradlew build` here.
-GitHub Actions does both, and attaches the jar to a pre-release on every push to `master`.
+Spotify cannot be played by a mod; this is a remote for the app you already have open (phone / desktop). Reading works for any account, controls need Premium.
+
+1. Go to https://developer.spotify.com/dashboard → Create app. Redirect URI: `http://127.0.0.1:8977/callback`. Check "Web API".
+2. `/backdrop spotify id <Client ID>` then `/backdrop spotify login` (browser opens).
+3. Start a song in Spotify. A card appears in the corner of BBS screens (`<<  ||  >>`).
+4. `/backdrop spotify play|pause|next|prev|volume <0-100>|card true|false|logout`
+
+## Build
+
+`./gradlew publishToMavenLocal` in BBS-RE, then `./gradlew build` here (GitHub Actions does it and attaches the jar to a pre-release).

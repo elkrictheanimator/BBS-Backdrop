@@ -9,4 +9,4 @@ pluginManagement {
 	}
 }
 
-rootProject.name = 'bbs-banner'
+rootProject.name = 'bbs-backdrop'

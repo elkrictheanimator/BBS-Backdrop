@@ -1,11 +1,9 @@
-package com.bbsbanner.client;
+package com.backdrop.client;
 
-import com.bbsbanner.BannerAddon;
-import mchorse.bbs_mod.BBSMod;
+import com.backdrop.BackdropConfig;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.utils.Area;
-import mchorse.bbs_mod.utils.colors.Colors;
 
 import java.io.File;
 
@@ -19,19 +17,21 @@ public class BannerRenderer
     {
         problem = null;
 
-        if (BannerAddon.enabled == null || !BannerAddon.enabled.get() || area.w <= 0 || area.h <= 0)
+        BackdropConfig.Source banner = BackdropConfig.get().banner;
+
+        if (!banner.enabled || area.w <= 0 || area.h <= 0)
         {
             return false;
         }
 
-        BannerVideo video = source();
+        BackdropVideo video = source(banner.url, banner.video);
 
         if (video == null)
         {
             return false;
         }
 
-        Texture frame = video.getFrame(BannerAddon.volume.get(), BannerAddon.syncOffset.get());
+        Texture frame = video.getFrame(banner.volume, banner.sync);
 
         if (frame == null || frame.width <= 0 || frame.height <= 0)
         {
@@ -57,7 +57,7 @@ public class BannerRenderer
         float u1 = (frame.width - cropW) * 0.5F;
         float v1 = (frame.height - cropH) * 0.5F;
 
-        context.batcher.texturedBox(frame, Colors.WHITE, area.x, area.y, area.w, area.h, u1, v1, u1 + cropW, v1 + cropH, frame.width, frame.height);
+        context.batcher.texturedBox(frame, 0xFFFFFFFF, area.x, area.y, area.w, area.h, u1, v1, u1 + cropW, v1 + cropH, frame.width, frame.height);
 
         return true;
     }
@@ -72,27 +72,26 @@ public class BannerRenderer
 
         String text = context.batcher.getFont().limitToWidth(problem, Math.max(10, area.w - 16));
 
-        context.batcher.textCard(text, area.x + 8, area.ey() - 18, Colors.WHITE, 0xaa000000);
+        context.batcher.textCard(text, area.x + 8, area.ey() - 18, 0xFFFFFFFF, 0xaa000000);
     }
 
-    private static BannerVideo source()
+    /** The video a pair of settings names: the web address wins over the file in the assets' video folder. */
+    public static BackdropVideo source(String url, String file)
     {
-        String url = BannerAddon.url.get().trim();
+        url = url == null ? "" : url.trim();
 
         if (!url.isEmpty())
         {
-            return BannerVideo.get(url, null);
+            return BackdropVideo.get(url, null);
         }
 
-        String name = BannerAddon.video.get().trim();
+        String name = file == null ? "" : file.trim();
 
         if (name.isEmpty())
         {
             return null;
         }
 
-        File file = new File(new File(BBSMod.getAssetsFolder(), "video"), name);
-
-        return BannerVideo.get(null, file);
+        return BackdropVideo.get(null, new File(Assets.videos(), name));
     }
 }
