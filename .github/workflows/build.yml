@@ -1,0 +1,58 @@
+name: Build
+
+on:
+  push:
+    branches: [ '**' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The addon compiles against BBS-RE, which has no public Maven repository: build it from
+      # source into the local Maven first (the same owner's BBS-RE repository, master branch).
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/BBS-RE
+          ref: master
+          path: bbs-re
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Publish BBS-RE to the local Maven
+        run: |
+          cd bbs-re
+          chmod +x gradlew
+          ./gradlew publishToMavenLocal --no-daemon -Dorg.gradle.jvmargs=-Xmx3G
+
+      - name: Build the addon
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon -Dorg.gradle.jvmargs=-Xmx3G
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bbs-banner-jar
+          path: |
+            build/libs/*.jar
+            !build/libs/*-sources.jar
+
+      # A test build anyone with access can download from the Releases page, no artifacts login dance.
+      - name: Test release
+        if: github.ref == 'refs/heads/master'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          JAR=$(ls build/libs/*.jar | grep -v sources | head -1)
+          gh release create "test-${{ github.run_number }}" "$JAR" --prerelease \
+            --title "Test build ${{ github.run_number }}" \
+            --notes "Test build from commit ${{ github.sha }}. Not for public release."
