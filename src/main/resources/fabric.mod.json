@@ -2,12 +2,13 @@
 	"schemaVersion": 1,
 	"id": "backdrop",
 	"version": "${version}",
-	"name": "BBS Backdrop",
-	"description": "Video backdrops with sound for BBS (the landing banner and a wallpaper behind every editor), and Spotify in them.",
+	"name": "Backdrop",
+	"description": "Video with sound behind BBS (wallpaper and banner), and Spotify in it. An addon for BBS-RE.",
 	"license": "MIT",
-	"environment": "client",
+	"environment": "*",
 	"entrypoints": {
-		"client": ["com.backdrop.Backdrop"]
+		"bbs-addon": ["com.backdrop.BackdropAddon"],
+		"bbs-client-addon": ["com.backdrop.BackdropClient"]
 	},
 	"mixins": [
 		{
@@ -20,10 +21,10 @@
 		}
 	],
 	"depends": {
-		"fabricloader": ">=0.15.0",
+		"fabricloader": ">=0.16.0",
 		"fabric-api": "*",
 		"minecraft": "~1.20.4",
 		"java": ">=17",
-		"bbs": "*"
+		"bbs": ">=2.7"
 	}
 }
