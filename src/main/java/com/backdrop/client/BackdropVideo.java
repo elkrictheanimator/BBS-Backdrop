@@ -1,7 +1,6 @@
-package com.bbsbanner.client;
+package com.backdrop.client;
 
 import mchorse.bbs_mod.graphics.texture.Texture;
-import mchorse.bbs_mod.utils.FFMpegUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 
@@ -35,9 +34,9 @@ import java.util.regex.Pattern;
  *
  * <p>The sync offset moves only which frame is picked, so it can be changed live.</p>
  */
-public class BannerVideo
+public class BackdropVideo
 {
-    private static final Map<String, BannerVideo> VIDEOS = new HashMap<>();
+    private static final Map<String, BackdropVideo> VIDEOS = new HashMap<>();
 
     private static final Pattern SIZE_PATTERN = Pattern.compile("Video:.*?(\\d{2,5})x(\\d{2,5})");
     private static final Pattern FPS_PATTERN = Pattern.compile("(\\d+(?:\\.\\d+)?) fps");
@@ -53,6 +52,7 @@ public class BannerVideo
     private static final int QUEUE = 6;
 
     private static final long IDLE_NANOS = 3_000_000_000L;
+    private static final long SOUND_HOLD_NANOS = 1_000_000_000L;
     private static final long RETRY_NANOS = 5_000_000_000L;
     private static final long AUDIO_WAIT_NANOS = 2_000_000_000L;
 
@@ -64,18 +64,20 @@ public class BannerVideo
     private volatile long lastUsed;
     private volatile long failedAt;
     private volatile String error;
+    private long soundUntil;
+    private float soundVolume = 1F;
 
-    public static BannerVideo get(String url, File file)
+    public static BackdropVideo get(String url, File file)
     {
         String key = url != null ? url : file.getAbsolutePath();
 
         synchronized (VIDEOS)
         {
-            return VIDEOS.computeIfAbsent(key, (k) -> new BannerVideo(url == null ? file : null, url));
+            return VIDEOS.computeIfAbsent(key, (k) -> new BackdropVideo(url == null ? file : null, url));
         }
     }
 
-    private BannerVideo(File file, String url)
+    private BackdropVideo(File file, String url)
     {
         this.file = file;
         this.url = url;
@@ -103,7 +105,15 @@ public class BannerVideo
             return null;
         }
 
-        boolean wantSound = volume > 0F;
+        /* Several places can ask for the same video with different volumes (the banner and the wallpaper):
+         * sound is wanted while anyone asked for it a moment ago, so they don't take turns restarting it */
+        if (volume > 0F)
+        {
+            this.soundUntil = now + SOUND_HOLD_NANOS;
+            this.soundVolume = volume;
+        }
+
+        boolean wantSound = now < this.soundUntil;
         Session current = this.session;
 
         /* The sound switched on or off, or the session ended: start a fresh one */
@@ -127,7 +137,7 @@ public class BannerVideo
             return this.texture;
         }
 
-        current.volume = volume;
+        current.volume = this.soundVolume;
 
         double target = current.clock() + offsetMs / 1000.0;
         Frame picked = null;
@@ -307,13 +317,8 @@ public class BannerVideo
         {
             try
             {
-                String ffmpeg = FFMpegUtils.getFFMPEG();
+                String ffmpeg = Ffmpeg.path();
                 String input = this.resolveInput();
-
-                if (input == null)
-                {
-                    return;
-                }
 
                 double fps = DEFAULT_FPS;
                 int[] size = this.probe(ffmpeg, input);
@@ -364,7 +369,7 @@ public class BannerVideo
 
                 while (!this.stop)
                 {
-                    if (System.nanoTime() - BannerVideo.this.lastUsed > IDLE_NANOS)
+                    if (System.nanoTime() - BackdropVideo.this.lastUsed > IDLE_NANOS)
                     {
                         break;
                     }
@@ -384,7 +389,7 @@ public class BannerVideo
                         {
                             if (count == 0)
                             {
-                                BannerVideo.this.error = "ffmpeg không giải mã được video này (thử file .mp4 H.264)";
+                                BackdropVideo.this.error = "ffmpeg không giải mã được video này (thử file .mp4 H.264)";
                             }
 
                             return;
@@ -400,7 +405,7 @@ public class BannerVideo
                     /* Blocks while the queue is full: the pipe backs up and ffmpeg waits, so decoding never runs ahead */
                     while (!this.stop && !this.frames.offer(frame, 100, TimeUnit.MILLISECONDS))
                     {
-                        if (System.nanoTime() - BannerVideo.this.lastUsed > IDLE_NANOS)
+                        if (System.nanoTime() - BackdropVideo.this.lastUsed > IDLE_NANOS)
                         {
                             return;
                         }
@@ -411,16 +416,16 @@ public class BannerVideo
             {
                 if (!this.stop)
                 {
-                    BannerVideo.this.error = "Không chạy được ffmpeg (đặt đường dẫn ffmpeg trong Settings > Video): " + e.getMessage();
+                    BackdropVideo.this.error = "Không chạy được ffmpeg (đặt đường dẫn ffmpeg trong Settings > Video): " + e.getMessage();
                 }
             }
             finally
             {
                 this.shutdown();
 
-                if (BannerVideo.this.error != null)
+                if (BackdropVideo.this.error != null)
                 {
-                    BannerVideo.this.failedAt = System.nanoTime();
+                    BackdropVideo.this.failedAt = System.nanoTime();
                 }
 
                 this.finished = true;
@@ -505,56 +510,15 @@ public class BannerVideo
 
         private double fps = DEFAULT_FPS;
 
-        /** What ffmpeg opens: the file, the address, or what yt-dlp makes of a page (YouTube and the like). */
-        private String resolveInput() throws Exception
+        /** What ffmpeg opens: the file, or the address. */
+        private String resolveInput()
         {
-            if (BannerVideo.this.file != null)
+            if (BackdropVideo.this.file != null)
             {
-                return BannerVideo.this.file.getAbsolutePath();
+                return BackdropVideo.this.file.getAbsolutePath();
             }
 
-            String address = BannerVideo.this.url;
-            String lower = address.toLowerCase();
-            boolean page = lower.contains("youtube.com") || lower.contains("youtu.be") || lower.contains("twitch.tv")
-                || lower.contains("vimeo.com") || lower.contains("bilibili.com");
-
-            if (!page)
-            {
-                return address;
-            }
-
-            Process process;
-
-            try
-            {
-                process = new ProcessBuilder("yt-dlp", "-g", "--no-playlist", "-f", "best[height<=720][vcodec!=none]/best[height<=720]/best", address).start();
-            }
-            catch (Exception e)
-            {
-                BannerVideo.this.error = "Link này cần yt-dlp: cài yt-dlp rồi thử lại";
-
-                return null;
-            }
-
-            String output;
-
-            try (InputStream stream = process.getInputStream())
-            {
-                output = new String(stream.readAllBytes(), StandardCharsets.UTF_8).trim();
-            }
-            finally
-            {
-                process.destroy();
-            }
-
-            if (output.isEmpty())
-            {
-                BannerVideo.this.error = "yt-dlp không lấy được video từ link này (link sai, riêng tư, hoặc yt-dlp cũ cần cập nhật)";
-
-                return null;
-            }
-
-            return output.split("\\r?\\n")[0];
+            return BackdropVideo.this.url;
         }
 
         /** The video's own size and frame rate, read off ffmpeg's info output; null (reason in the error) when it can't be. */
@@ -580,7 +544,7 @@ public class BannerVideo
 
             if (!size.find())
             {
-                BannerVideo.this.error = "ffmpeg không đọc được file video này";
+                BackdropVideo.this.error = "ffmpeg không đọc được file video này";
 
                 return null;
             }
@@ -604,7 +568,7 @@ public class BannerVideo
 
             if (w <= 0 || h <= 0)
             {
-                BannerVideo.this.error = "Kích thước video không hợp lệ";
+                BackdropVideo.this.error = "Kích thước video không hợp lệ";
 
                 return null;
             }
