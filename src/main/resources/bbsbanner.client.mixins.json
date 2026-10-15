@@ -1,0 +1,12 @@
+{
+	"required": true,
+	"minVersion": "0.8",
+	"package": "com.bbsbanner.mixin",
+	"compatibilityLevel": "JAVA_17",
+	"client": [
+		"UILandingScreenMixin"
+	],
+	"injectors": {
+		"defaultRequire": 0
+	}
+}
