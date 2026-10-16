@@ -1,8 +1,10 @@
 package com.backdrop;
 
+import com.backdrop.spotify.SpotifyCard;
 import com.backdrop.ui.UIBackdropPanel;
 import mchorse.bbs_mod.api.BBSAddonMod;
 import mchorse.bbs_mod.api.Subscribe;
+import mchorse.bbs_mod.api.client.events.BBSClientReadyEvent;
 import mchorse.bbs_mod.api.client.events.RegisterDashboardPanelsEvent;
 import mchorse.bbs_mod.api.client.events.RegisterL10nEvent;
 import mchorse.bbs_mod.l10n.L10n;
@@ -26,5 +28,11 @@ public class BackdropClient implements BBSAddonMod
     public void onPanels(RegisterDashboardPanelsEvent event)
     {
         event.dashboard.getPanels().registerPanel(new UIBackdropPanel(event.dashboard), L10n.lang("backdrop.ui.title"), Icons.PLAY);
+    }
+
+    @Subscribe
+    public void onClientReady(BBSClientReadyEvent event)
+    {
+        SpotifyCard.register();
     }
 }

@@ -1,20 +1,12 @@
 package com.backdrop;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import net.fabricmc.loader.api.FabricLoader;
-
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 /**
- * Everything the addon remembers, in {@code config/backdrop.json}. A plain file on purpose: it
- * needs nothing from BBS, so it reads the same on every BBS version.
+ * Backdrop's settings as the drawing code reads them. The truth is BBS's own settings screen
+ * ({@link BackdropAddon}); {@link #get()} takes a snapshot of it and {@link #save()} writes the
+ * snapshot back.
  */
 public class BackdropConfig
 {
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static BackdropConfig instance;
 
     /** One place a video can play: the landing banner, or the wallpaper behind the editors. */
@@ -59,10 +51,7 @@ public class BackdropConfig
 
     public Spotify spotify = new Spotify();
 
-    /**
-     * Where the settings live when BBS has the addon API: its own settings screen (see
-     * {@link BackdropAddon}). Set by that class only; without it the JSON file is the truth.
-     */
+    /** How the snapshot reaches the settings; set by {@link BackdropAddon} once they exist. */
     public interface Bridge
     {
         void pull(BackdropConfig config);
@@ -76,7 +65,7 @@ public class BackdropConfig
     {
         if (instance == null)
         {
-            instance = load();
+            instance = new BackdropConfig();
         }
 
         Bridge bridge = BackdropConfig.bridge;
@@ -89,50 +78,6 @@ public class BackdropConfig
         return instance;
     }
 
-    private static Path file()
-    {
-        return FabricLoader.getInstance().getConfigDir().resolve("backdrop.json");
-    }
-
-    private static BackdropConfig load()
-    {
-        try
-        {
-            Path file = file();
-
-            if (Files.isRegularFile(file))
-            {
-                BackdropConfig config = GSON.fromJson(new String(Files.readAllBytes(file), StandardCharsets.UTF_8), BackdropConfig.class);
-
-                if (config != null)
-                {
-                    config.fix();
-
-                    return config;
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            System.err.println("[Backdrop] Could not read config/backdrop.json: " + e.getMessage());
-        }
-
-        return new BackdropConfig();
-    }
-
-    /** A file written by hand or by an older version can miss parts. */
-    private void fix()
-    {
-        if (this.banner == null) this.banner = new Source(0.5F);
-        if (this.wallpaper == null) this.wallpaper = new Source(0F);
-        if (this.spotify == null) this.spotify = new Spotify();
-        if (this.banner.video == null) this.banner.video = "";
-        if (this.banner.url == null) this.banner.url = "";
-        if (this.wallpaper.video == null) this.wallpaper.video = "";
-        if (this.wallpaper.url == null) this.wallpaper.url = "";
-        if (this.ffmpeg == null) this.ffmpeg = "";
-    }
-
     public synchronized void save()
     {
         Bridge bridge = BackdropConfig.bridge;
@@ -140,20 +85,6 @@ public class BackdropConfig
         if (bridge != null)
         {
             bridge.push(this);
-
-            return;
-        }
-
-        try
-        {
-            Path file = file();
-
-            Files.createDirectories(file.getParent());
-            Files.write(file, GSON.toJson(this).getBytes(StandardCharsets.UTF_8));
-        }
-        catch (Exception e)
-        {
-            System.err.println("[Backdrop] Could not write config/backdrop.json: " + e.getMessage());
         }
     }
 }
