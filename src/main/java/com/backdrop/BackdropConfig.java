@@ -59,11 +59,31 @@ public class BackdropConfig
 
     public Spotify spotify = new Spotify();
 
+    /**
+     * Where the settings live when BBS has the addon API: its own settings screen (see
+     * {@link BackdropAddon}). Set by that class only; without it the JSON file is the truth.
+     */
+    public interface Bridge
+    {
+        void pull(BackdropConfig config);
+
+        void push(BackdropConfig config);
+    }
+
+    public static volatile Bridge bridge;
+
     public static synchronized BackdropConfig get()
     {
         if (instance == null)
         {
             instance = load();
+        }
+
+        Bridge bridge = BackdropConfig.bridge;
+
+        if (bridge != null)
+        {
+            bridge.pull(instance);
         }
 
         return instance;
@@ -115,6 +135,15 @@ public class BackdropConfig
 
     public synchronized void save()
     {
+        Bridge bridge = BackdropConfig.bridge;
+
+        if (bridge != null)
+        {
+            bridge.push(this);
+
+            return;
+        }
+
         try
         {
             Path file = file();
