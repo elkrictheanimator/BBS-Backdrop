@@ -1,7 +1,9 @@
 package com.backdrop.client;
 
 import com.backdrop.BackdropConfig;
+import mchorse.bbs_mod.BBSModClient;
 import mchorse.bbs_mod.graphics.texture.Texture;
+import mchorse.bbs_mod.utils.colors.Colors;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.utils.Area;
 
@@ -12,18 +14,60 @@ public class BannerRenderer
 {
     private static String problem;
 
-    /** Draw the frame over the banner; false when there is nothing to draw yet. */
+    /**
+     * Draw the banner in the chosen style over BBS's; false hands the banner back to BBS (the default
+     * slideshow, or a style that has nothing to show yet).
+     */
     public static boolean draw(UIContext context, Area area)
     {
         problem = null;
 
-        BackdropConfig.Source banner = BackdropConfig.get().banner;
+        BackdropConfig config = BackdropConfig.get();
 
-        if (!banner.enabled || area.w <= 0 || area.h <= 0)
+        if (area.w <= 0 || area.h <= 0)
         {
             return false;
         }
 
+        switch (config.bannerStyle)
+        {
+            case 1:
+            case 2:
+                int a = Colors.A100 | (config.colorStart & Colors.RGB);
+                int b = Colors.A100 | (config.colorEnd & Colors.RGB);
+
+                if (config.bannerStyle == 1)
+                {
+                    context.batcher.gradientVBox(area.x, area.y, area.ex(), area.ey(), a, b);
+                }
+                else
+                {
+                    context.batcher.gradientHBox(area.x, area.y, area.ex(), area.ey(), a, b);
+                }
+
+                return true;
+            case 3:
+                Texture image = config.image == null ? null : BBSModClient.getTextures().getTexture(config.image);
+
+                if (image == null)
+                {
+                    return false;
+                }
+
+                float[] crop = crop(image, (float) area.w / area.h);
+
+                context.batcher.texturedBox(image, 0xFFFFFFFF, area.x, area.y, area.w, area.h, crop[0], crop[1], crop[2], crop[3], image.width, image.height);
+
+                return true;
+            case 4:
+                return drawVideo(context, area, config.banner);
+            default:
+                return false;
+        }
+    }
+
+    private static boolean drawVideo(UIContext context, Area area, BackdropConfig.Source banner)
+    {
         BackdropVideo video = source(banner.url, banner.video);
 
         if (video == null)
@@ -40,26 +84,45 @@ public class BannerRenderer
             return false;
         }
 
-        float areaAspect = (float) area.w / area.h;
-        float textureAspect = (float) frame.width / frame.height;
-        float cropW = frame.width;
-        float cropH = frame.height;
+        float[] crop = crop(frame, (float) area.w / area.h);
 
-        if (areaAspect > textureAspect)
+        context.batcher.texturedBox(frame, 0xFFFFFFFF, area.x, area.y, area.w, area.h, crop[0], crop[1], crop[2], crop[3], frame.width, frame.height);
+
+        return true;
+    }
+
+    /**
+     * The part of a picture a banner of this aspect shows: {u1, v1, u2, v2} in pixels. The picture fills
+     * the banner, is zoomed by the setting, and the window slides over it by the focus.
+     */
+    public static float[] crop(Texture texture, float areaAspect)
+    {
+        BackdropConfig config = BackdropConfig.get();
+        float texW = texture.width;
+        float texH = texture.height;
+        float cropW;
+        float cropH;
+
+        if (areaAspect > texW / texH)
         {
-            cropH = frame.width / areaAspect;
+            cropW = texW;
+            cropH = texW / areaAspect;
         }
         else
         {
-            cropW = frame.height * areaAspect;
+            cropH = texH;
+            cropW = texH * areaAspect;
         }
 
-        float u1 = (frame.width - cropW) * 0.5F;
-        float v1 = (frame.height - cropH) * 0.5F;
+        float zoom = Math.max(1F, config.zoom);
 
-        context.batcher.texturedBox(frame, 0xFFFFFFFF, area.x, area.y, area.w, area.h, u1, v1, u1 + cropW, v1 + cropH, frame.width, frame.height);
+        cropW /= zoom;
+        cropH /= zoom;
 
-        return true;
+        float u1 = Math.max(0F, texW - cropW) * Math.max(0F, Math.min(1F, config.focusX));
+        float v1 = Math.max(0F, texH - cropH) * Math.max(0F, Math.min(1F, config.focusY));
+
+        return new float[] {u1, v1, u1 + cropW, v1 + cropH};
     }
 
     /** Written over BBS's own banner when the video can't be played, so it isn't a mystery. */

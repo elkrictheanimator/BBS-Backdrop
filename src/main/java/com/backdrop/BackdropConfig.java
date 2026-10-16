@@ -1,5 +1,7 @@
 package com.backdrop;
 
+import mchorse.bbs_mod.resources.Link;
+
 /**
  * Backdrop's settings as the drawing code reads them. The truth is BBS's own settings screen
  * ({@link BackdropAddon}); {@link #get()} takes a snapshot of it and {@link #save()} writes the

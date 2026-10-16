@@ -4,6 +4,7 @@ import mchorse.bbs_mod.api.BBSAddonMod;
 import mchorse.bbs_mod.api.Subscribe;
 import mchorse.bbs_mod.api.events.RegisterSettingsEvent;
 import mchorse.bbs_mod.api.events.RegisterSourcePacksEvent;
+import mchorse.bbs_mod.settings.values.core.ValueLink;
 import mchorse.bbs_mod.settings.values.core.ValueString;
 import mchorse.bbs_mod.settings.values.numeric.ValueBoolean;
 import mchorse.bbs_mod.settings.values.numeric.ValueFloat;
@@ -19,10 +20,12 @@ public class BackdropAddon implements BBSAddonMod
 {
     public static final String MOD_ID = "backdrop";
 
-    private static ValueBoolean bannerEnabled, wallpaperEnabled, card;
+    private static ValueBoolean wallpaperEnabled, card;
+    private static ValueLink bannerImage;
+    private static ValueFloat bannerZoom, bannerFocusX, bannerFocusY;
     private static ValueString bannerVideo, bannerUrl, wallpaperVideo, wallpaperUrl, ffmpeg, clientId, accessToken, refreshToken, expiresAt;
     private static ValueFloat bannerVolume, wallpaperVolume, darkness, panelOpacity;
-    private static ValueInt bannerSync, wallpaperSync;
+    private static ValueInt bannerSync, wallpaperSync, bannerStyle, bannerColorStart, bannerColorEnd, bannerHeight;
 
     @Subscribe
     public void onSourcePacks(RegisterSourcePacksEvent event)
@@ -37,7 +40,22 @@ public class BackdropAddon implements BBSAddonMod
         {
             builder.category("banner", Icons.FILM);
 
-            bannerEnabled = builder.getBoolean("enabled", true);
+            bannerStyle = builder.getInt("style", 0, 0, 4);
+            bannerColorStart = builder.getInt("color_start", 0x1b2a4e);
+            bannerColorEnd = builder.getInt("color_end", 0x8a3ffc);
+            bannerImage = builder.getRL("image", null);
+            bannerHeight = builder.getInt("height", BackdropConfig.BANNER_H, 90, 300);
+            bannerZoom = builder.getFloat("zoom", 1F, 1F, 4F);
+            bannerFocusX = builder.getFloat("focus_x", 0.5F, 0F, 1F);
+            bannerFocusY = builder.getFloat("focus_y", 0.5F, 0F, 1F);
+
+            /* Edited from the button on the banner, not from the settings list */
+            bannerColorStart.invisible();
+            bannerColorEnd.invisible();
+            bannerImage.invisible();
+            bannerZoom.invisible();
+            bannerFocusX.invisible();
+            bannerFocusY.invisible();
             bannerVideo = builder.getString("video", "");
             bannerUrl = builder.getString("url", "");
             bannerVolume = builder.getFloat("volume", 0.5F, 0F, 1F);
@@ -74,7 +92,15 @@ public class BackdropAddon implements BBSAddonMod
                 @Override
                 public void pull(BackdropConfig c)
                 {
-                    c.banner.enabled = bannerEnabled.get();
+                    c.bannerStyle = bannerStyle.get();
+                    c.banner.enabled = c.bannerStyle == 4;
+                    c.colorStart = bannerColorStart.get();
+                    c.colorEnd = bannerColorEnd.get();
+                    c.image = bannerImage.get();
+                    c.height = bannerHeight.get();
+                    c.zoom = bannerZoom.get();
+                    c.focusX = bannerFocusX.get();
+                    c.focusY = bannerFocusY.get();
                     c.banner.video = bannerVideo.get();
                     c.banner.url = bannerUrl.get();
                     c.banner.volume = bannerVolume.get();
@@ -105,7 +131,14 @@ public class BackdropAddon implements BBSAddonMod
                 @Override
                 public void push(BackdropConfig c)
                 {
-                    bannerEnabled.set(c.banner.enabled);
+                    bannerStyle.set(c.bannerStyle);
+                    bannerColorStart.set(c.colorStart);
+                    bannerColorEnd.set(c.colorEnd);
+                    bannerImage.set(c.image);
+                    bannerHeight.set(c.height);
+                    bannerZoom.set(c.zoom);
+                    bannerFocusX.set(c.focusX);
+                    bannerFocusY.set(c.focusY);
                     bannerVideo.set(c.banner.video);
                     bannerUrl.set(c.banner.url);
                     bannerVolume.set(c.banner.volume);

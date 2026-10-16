@@ -1,6 +1,7 @@
 package com.backdrop.mixin;
 
 import com.backdrop.client.BannerButton;
+import com.backdrop.client.BannerLayout;
 import com.backdrop.client.BannerRenderer;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.utils.Area;
@@ -28,6 +29,8 @@ public abstract class UILandingScreenMixin
     @Inject(method = "renderBanner", at = @At("HEAD"), cancellable = true, remap = false, require = 0)
     private void backdrop$draw(UIContext context, Area area, CallbackInfo ci)
     {
+        BannerLayout.apply(this);
+
         if (BannerRenderer.draw(context, area))
         {
             ci.cancel();
