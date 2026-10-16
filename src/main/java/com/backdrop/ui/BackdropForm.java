@@ -2,10 +2,6 @@ package com.backdrop.ui;
 
 import com.backdrop.BackdropConfig;
 import com.backdrop.client.Assets;
-import mchorse.bbs_mod.ui.framework.elements.buttons.UICirculate;
-import mchorse.bbs_mod.ui.framework.elements.input.UIColor;
-import mchorse.bbs_mod.ui.framework.elements.input.UITexturePicker;
-import mchorse.bbs_mod.utils.colors.Colors;
 import com.backdrop.spotify.Spotify;
 import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.l10n.keys.IKey;
@@ -14,7 +10,6 @@ import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
-import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIPromptOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIStringOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.utils.UILabel;
@@ -28,17 +23,28 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * The Backdrop panel, opened from the button on the landing screen's banner: the same values as BBS's settings screen, with pickers for
- * the video and the Spotify sign-in. Every label is a language key (assets/backdrop/assets/strings).
+ * What the Backdrop window shows, the same on every BBS: the wallpaper, the Spotify sign-in and, where
+ * the BBS has a landing banner, its settings ({@link BannerPart}). Every label is a language key
+ * (assets/backdrop/assets/strings). A window (overlay or dashboard panel) puts {@link #view()} in itself.
  */
-public class UIBackdropPanel extends UIOverlayPanel
+public class BackdropForm
 {
-    private final UILabel spotifyStatus;
-
-    public UIBackdropPanel()
+    /** The banner's part of the form, from the build that has a banner. */
+    public interface BannerPart
     {
-        super(L10n.lang("backdrop.ui.title"));
+        void add(List<UIElement> items, BackdropConfig config, UIElement owner, List<Runnable> cleanup);
+    }
 
+    private final UIElement owner;
+    private final UILabel spotifyStatus;
+    private final UIElement view;
+
+    /** What to do when the window closes (colour pickers live next to the overlay). */
+    public final List<Runnable> cleanup = new ArrayList<>();
+
+    public BackdropForm(UIElement owner, BannerPart banner)
+    {
+        this.owner = owner;
         this.spotifyStatus = UI.label(IKey.constant(""));
 
         List<UIElement> items = new ArrayList<>();
@@ -52,10 +58,13 @@ public class UIBackdropPanel extends UIOverlayPanel
         items.add(label("backdrop.ui.panel_opacity"));
         items.add(trackpad(c.panelOpacity, (v) -> c.panelOpacity = v));
 
-        items.add(title("backdrop.ui.banner"));
-        this.bannerItems(items, c);
-        items.add(title("backdrop.ui.banner_video"));
-        this.source(items, c.banner);
+        if (banner != null)
+        {
+            items.add(title("backdrop.ui.banner"));
+            banner.add(items, c, owner, this.cleanup);
+            items.add(title("backdrop.ui.banner_video"));
+            this.source(items, c.banner);
+        }
 
         items.add(title("backdrop.ui.spotify"));
         items.add(label("backdrop.ui.spotify_help"));
@@ -77,15 +86,16 @@ public class UIBackdropPanel extends UIOverlayPanel
         }));
         items.add(this.spotifyStatus);
 
-        UIElement column = UI.scrollView(5, 10, items.toArray(new UIElement[0]));
-
-        column.relative(this.content).xy(0, 0).w(1F).h(1F);
-        this.content.add(column);
-
+        this.view = UI.scrollView(5, 10, items.toArray(new UIElement[0]));
         this.refresh();
     }
 
-    private void refresh()
+    public UIElement view()
+    {
+        return this.view;
+    }
+
+    public void refresh()
     {
         this.spotifyStatus.label = L10n.lang(Spotify.signedIn() ? "backdrop.ui.signed_in" : "backdrop.ui.signed_out");
     }
@@ -95,104 +105,9 @@ public class UIBackdropPanel extends UIOverlayPanel
         return UI.label(L10n.lang(key)).background();
     }
 
-    private static UILabel label(String key)
+    public static UILabel label(String key)
     {
         return UI.label(L10n.lang(key));
-    }
-
-    /** What RE's banner editor has: style, picture and its framing, the two colours, the height. */
-    private void bannerItems(List<UIElement> items, BackdropConfig c)
-    {
-        UICirculate style = new UICirculate((b) ->
-        {
-            c.bannerStyle = b.getValue();
-            c.save();
-        });
-
-        for (String key : new String[] {"style_default", "style_vertical", "style_horizontal", "style_image", "style_video"})
-        {
-            style.addLabel(L10n.lang("backdrop.ui." + key));
-        }
-
-        style.setValue(c.bannerStyle);
-        items.add(style);
-
-        items.add(new UIButton(L10n.lang("backdrop.ui.pick_image"), (b) ->
-            UITexturePicker.open(this.getContext(), c.image, (link) ->
-            {
-                c.image = link;
-                c.bannerStyle = 3;
-                style.setValue(3);
-                c.save();
-            })));
-        items.add(new UIButton(L10n.lang("backdrop.ui.remove_image"), (b) ->
-        {
-            c.image = null;
-
-            if (c.bannerStyle == 3)
-            {
-                c.bannerStyle = 0;
-                style.setValue(0);
-            }
-
-            c.save();
-        }));
-
-        UIBannerFramer framer = new UIBannerFramer();
-
-        framer.h(Math.max(40, 240 * Math.max(1, c.height) / 440));
-        items.add(framer);
-        /* The same framing as numbers, for when the wheel and the drag are not handy */
-        items.add(label("backdrop.ui.zoom"));
-        items.add(this.framing(c.zoom, 1F, 4F, (v) -> c.zoom = v));
-        items.add(label("backdrop.ui.focus_x"));
-        items.add(this.framing(c.focusX, 0F, 1F, (v) -> c.focusX = v));
-        items.add(label("backdrop.ui.focus_y"));
-        items.add(this.framing(c.focusY, 0F, 1F, (v) -> c.focusY = v));
-        items.add(new UIButton(L10n.lang("backdrop.ui.reframe"), (b) ->
-        {
-            c.zoom = 1F;
-            c.focusX = 0.5F;
-            c.focusY = 0.5F;
-            c.save();
-        }));
-
-        UIColor start = new UIColor((color) ->
-        {
-            c.colorStart = color & Colors.RGB;
-            c.save();
-        });
-        UIColor end = new UIColor((color) ->
-        {
-            c.colorEnd = color & Colors.RGB;
-            c.save();
-        });
-
-        start.setColor(c.colorStart & Colors.RGB);
-        end.setColor(c.colorEnd & Colors.RGB);
-        items.add(label("backdrop.ui.color_start"));
-        items.add(start);
-        items.add(label("backdrop.ui.color_end"));
-        items.add(end);
-
-        items.add(label("backdrop.ui.height"));
-
-        UITrackpad height = new UITrackpad((v) ->
-        {
-            c.height = v.intValue();
-            c.save();
-        });
-
-        height.limit(90, 300).integer();
-        height.setValue(c.height);
-        items.add(height);
-
-        /* The colour pickers live next to the overlay, so they would outlive the panel */
-        this.onClose((e) ->
-        {
-            start.picker.removeFromParent();
-            end.picker.removeFromParent();
-        });
     }
 
     private void source(List<UIElement> items, BackdropConfig.Source source)
@@ -295,7 +210,7 @@ public class UIBackdropPanel extends UIOverlayPanel
                 BackdropConfig.peek().save();
             });
 
-            UIOverlay.addOverlay(this.getContext(), panel.set(source.video));
+            UIOverlay.addOverlay(this.owner.getContext(), panel.set(source.video));
         });
     }
 
@@ -310,7 +225,7 @@ public class UIBackdropPanel extends UIOverlayPanel
             });
 
             panel.text.setText(get.get());
-            UIOverlay.addOverlay(this.getContext(), panel);
+            UIOverlay.addOverlay(this.owner.getContext(), panel);
         });
     }
 }

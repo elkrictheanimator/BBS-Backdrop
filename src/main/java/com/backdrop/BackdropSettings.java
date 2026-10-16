@@ -1,9 +1,6 @@
 package com.backdrop;
 
-import mchorse.bbs_mod.api.BBSAddonMod;
-import mchorse.bbs_mod.api.Subscribe;
-import mchorse.bbs_mod.api.events.RegisterSettingsEvent;
-import mchorse.bbs_mod.api.events.RegisterSourcePacksEvent;
+import mchorse.bbs_mod.settings.SettingsBuilder;
 import mchorse.bbs_mod.settings.values.core.ValueLink;
 import mchorse.bbs_mod.settings.values.core.ValueString;
 import mchorse.bbs_mod.settings.values.numeric.ValueBoolean;
@@ -12,11 +9,10 @@ import mchorse.bbs_mod.settings.values.numeric.ValueInt;
 import mchorse.bbs_mod.ui.utils.icons.Icons;
 
 /**
- * The part of Backdrop that uses BBS's addon API, where there is one (BBS-RE, BBS FS 2.5.2+): its own
- * assets (the language files) and a category in BBS's settings screen, which then holds the settings
- * the way BBS's own do. Without the API {@link Backdrop} runs on its own file and commands.
+ * Backdrop's settings, in BBS's own settings screen (category "backdrop"). The same on every BBS the
+ * addon is built for; each one's addon class calls {@link #register}.
  */
-public class BackdropAddon implements BBSAddonMod
+public class BackdropSettings
 {
     public static final String MOD_ID = "backdrop";
 
@@ -27,16 +23,10 @@ public class BackdropAddon implements BBSAddonMod
     private static ValueFloat bannerVolume, wallpaperVolume, darkness, panelOpacity;
     private static ValueInt bannerSync, wallpaperSync, bannerStyle, bannerColorStart, bannerColorEnd, bannerHeight;
 
-    @Subscribe
-    public void onSourcePacks(RegisterSourcePacksEvent event)
+    /** The settings, made inside BBS's settings registration; {@code banner}: the BBS has a landing banner to set. */
+    public static void register(SettingsBuilder builder, boolean banner)
     {
-        event.registerAddon(MOD_ID, BackdropAddon.class);
-    }
-
-    @Subscribe
-    public void onSettings(RegisterSettingsEvent event)
-    {
-        event.register(Icons.PLAY, MOD_ID, (builder) ->
+        if (banner)
         {
             builder.category("banner", Icons.FILM);
 
@@ -60,6 +50,8 @@ public class BackdropAddon implements BBSAddonMod
             bannerUrl = builder.getString("url", "");
             bannerVolume = builder.getFloat("volume", 0.5F, 0F, 1F);
             bannerSync = builder.getInt("sync", 0, -3000, 3000);
+
+        }
 
             builder.category("wallpaper", Icons.IMAGE);
 
@@ -86,25 +78,29 @@ public class BackdropAddon implements BBSAddonMod
 
             ffmpeg = builder.getString("ffmpeg", "");
 
-            /* From here on the settings screen is the truth, and the file is left alone */
-            BackdropConfig.bridge = new BackdropConfig.Bridge()
+        /* From here on the settings screen is the truth */
+                        BackdropConfig.bridge = new BackdropConfig.Bridge()
             {
                 @Override
                 public void pull(BackdropConfig c)
                 {
-                    c.bannerStyle = bannerStyle.get();
-                    c.banner.enabled = c.bannerStyle == 4;
-                    c.colorStart = bannerColorStart.get();
-                    c.colorEnd = bannerColorEnd.get();
-                    c.image = bannerImage.get();
-                    c.height = bannerHeight.get();
-                    c.zoom = bannerZoom.get();
-                    c.focusX = bannerFocusX.get();
-                    c.focusY = bannerFocusY.get();
-                    c.banner.video = bannerVideo.get();
-                    c.banner.url = bannerUrl.get();
-                    c.banner.volume = bannerVolume.get();
-                    c.banner.sync = bannerSync.get();
+                    if (bannerStyle != null)
+                    {
+                        c.bannerStyle = bannerStyle.get();
+                        c.banner.enabled = c.bannerStyle == 4;
+                        c.colorStart = bannerColorStart.get();
+                        c.colorEnd = bannerColorEnd.get();
+                        c.image = bannerImage.get();
+                        c.height = bannerHeight.get();
+                        c.zoom = bannerZoom.get();
+                        c.focusX = bannerFocusX.get();
+                        c.focusY = bannerFocusY.get();
+                        c.banner.video = bannerVideo.get();
+                        c.banner.url = bannerUrl.get();
+                        c.banner.volume = bannerVolume.get();
+                        c.banner.sync = bannerSync.get();
+                    }
+
                     c.wallpaper.enabled = wallpaperEnabled.get();
                     c.wallpaper.video = wallpaperVideo.get();
                     c.wallpaper.url = wallpaperUrl.get();
@@ -131,18 +127,22 @@ public class BackdropAddon implements BBSAddonMod
                 @Override
                 public void push(BackdropConfig c)
                 {
-                    bannerStyle.set(c.bannerStyle);
-                    bannerColorStart.set(c.colorStart);
-                    bannerColorEnd.set(c.colorEnd);
-                    bannerImage.set(c.image);
-                    bannerHeight.set(c.height);
-                    bannerZoom.set(c.zoom);
-                    bannerFocusX.set(c.focusX);
-                    bannerFocusY.set(c.focusY);
-                    bannerVideo.set(c.banner.video);
-                    bannerUrl.set(c.banner.url);
-                    bannerVolume.set(c.banner.volume);
-                    bannerSync.set(c.banner.sync);
+                    if (bannerStyle != null)
+                    {
+                        bannerStyle.set(c.bannerStyle);
+                        bannerColorStart.set(c.colorStart);
+                        bannerColorEnd.set(c.colorEnd);
+                        bannerImage.set(c.image);
+                        bannerHeight.set(c.height);
+                        bannerZoom.set(c.zoom);
+                        bannerFocusX.set(c.focusX);
+                        bannerFocusY.set(c.focusY);
+                        bannerVideo.set(c.banner.video);
+                        bannerUrl.set(c.banner.url);
+                        bannerVolume.set(c.banner.volume);
+                        bannerSync.set(c.banner.sync);
+                    }
+
                     wallpaperEnabled.set(c.wallpaper.enabled);
                     wallpaperVideo.set(c.wallpaper.video);
                     wallpaperUrl.set(c.wallpaper.url);
@@ -158,6 +158,5 @@ public class BackdropAddon implements BBSAddonMod
                     expiresAt.set(String.valueOf(c.spotify.expiresAt));
                 }
             };
-        });
     }
 }

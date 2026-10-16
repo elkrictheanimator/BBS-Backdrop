@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [ fs-1.20.4, fs-1.20.1, fs-1.21.1 ]
+        target: [ fs-1.20.4, fs-1.20.1, fs-1.21.1, cml-1.20.1, cml-1.20.4, cml-1.21.1, cml-1.21.4 ]
     steps:
       - uses: actions/checkout@v4
 
@@ -24,6 +24,7 @@ jobs:
           get() { grep "^$1=" targets/${{ matrix.target }}.properties | cut -d= -f2-; }
           echo "repo=$(get bbs_repo)" >> "$GITHUB_OUTPUT"
           echo "ref=$(get bbs_ref)" >> "$GITHUB_OUTPUT"
+          echo "mode=$(get bbs_mode)" >> "$GITHUB_OUTPUT"
 
       # The addon compiles against BBS, which has no public Maven repository: build the right BBS
       # (a branch of the repository the target names) into the local Maven first.
@@ -40,10 +41,22 @@ jobs:
           cache: gradle
 
       - name: Publish BBS to the local Maven
+        if: steps.t.outputs.mode == 'maven'
         run: |
           cd bbs
           chmod +x gradlew
           ./gradlew publishToMavenLocal --no-daemon -Dorg.gradle.jvmargs=-Xmx3G
+
+      # BBS CML is not made for publishing: its remapped jar is what the addon compiles against.
+      - name: Build BBS into a jar
+        if: steps.t.outputs.mode == 'jar'
+        run: |
+          cd bbs
+          chmod +x gradlew
+          ./gradlew remapJar --no-daemon -Dorg.gradle.jvmargs=-Xmx3G
+          mkdir -p ../bbs-jar
+          cp "$(ls build/libs/*.jar | grep -v -e sources -e dev | head -1)" ../bbs-jar/bbs.jar
+          ls -la ../bbs-jar
 
       - name: Build the addon
         run: |

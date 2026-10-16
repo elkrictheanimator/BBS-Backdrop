@@ -12,6 +12,8 @@ version = project.mod_version + "-" + project.target
 group = project.maven_group
 
 sourceSets.main.java.srcDir "src/compat/${project.compat}/java"
+sourceSets.main.java.srcDir "src/variant/${project.variant}/java"
+sourceSets.main.resources.srcDir "src/variant/${project.variant}/resources"
 
 base {
 	archivesName = project.archives_base_name
@@ -33,14 +35,19 @@ dependencies {
 	 * The consequence is worth knowing: the dev client then runs BBS without Sodium and Iris, its
 	 * mixins into them are skipped with a warning, and nothing that depends on shaders is
 	 * exercised here. */
-	modImplementation("${project.bbs_group}:${project.bbs_artifact}:${project.bbs_version}") { transitive = false }
+	if (project.bbs_mode == "jar") {
+		/* A BBS that is not published to Maven (CML): the CI builds its jar and puts it here */
+		modImplementation files("bbs-jar/bbs.jar")
+	} else {
+		modImplementation("${project.bbs_group}:${project.bbs_artifact}:${project.bbs_version}") { transitive = false }
+	}
 }
 
 /* Loom caches the remapped BBS by its Maven coordinates, and BBS's version does not change while
  * it is being worked on — so a rebuilt BBS is silently ignored, and it looks exactly like the
  * changes to BBS not existing. A flag one has to remember is a flag one forgets, so this notices
  * on its own: if the published jar is newer than the cached remap, the cache goes. */
-def bbsJar = new File(new File(System.getProperty("user.home")), ".m2/repository/${project.bbs_group}/${project.bbs_artifact}/${project.bbs_version}/${project.bbs_artifact}-${project.bbs_version}.jar")
+def bbsJar = project.bbs_mode == "jar" ? file("bbs-jar/bbs.jar") : new File(new File(System.getProperty("user.home")), ".m2/repository/${project.bbs_group}/${project.bbs_artifact}/${project.bbs_version}/${project.bbs_artifact}-${project.bbs_version}.jar")
 def remapCache = file(".gradle/loom-cache/remapped_mods/remapped/mchorse")
 
 if (bbsJar.exists() && remapCache.exists() && bbsJar.lastModified() > remapCache.lastModified()) {

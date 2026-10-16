@@ -68,7 +68,7 @@ public class BannerRenderer
 
     private static boolean drawVideo(UIContext context, Area area, BackdropConfig.Source banner)
     {
-        BackdropVideo video = source(banner.url, banner.video);
+        BackdropVideo video = VideoSources.source(banner.url, banner.video);
 
         if (video == null)
         {
@@ -136,25 +136,5 @@ public class BannerRenderer
         String text = context.batcher.getFont().limitToWidth(problem, Math.max(10, area.w - 16));
 
         context.batcher.textCard(text, area.x + 8, area.ey() - 18, 0xFFFFFFFF, 0xaa000000);
-    }
-
-    /** The video a pair of settings names: the web address wins over the file in the assets' video folder. */
-    public static BackdropVideo source(String url, String file)
-    {
-        url = url == null ? "" : url.trim();
-
-        if (!url.isEmpty())
-        {
-            return BackdropVideo.get(url, null);
-        }
-
-        String name = file == null ? "" : file.trim();
-
-        if (name.isEmpty())
-        {
-            return null;
-        }
-
-        return BackdropVideo.get(null, new File(Assets.videos(), name));
     }
 }

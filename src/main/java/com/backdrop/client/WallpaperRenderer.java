@@ -26,7 +26,7 @@ public class WallpaperRenderer
             return false;
         }
 
-        BackdropVideo video = BannerRenderer.source(wallpaper.url, wallpaper.video);
+        BackdropVideo video = VideoSources.source(wallpaper.url, wallpaper.video);
 
         if (video == null)
         {
