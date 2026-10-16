@@ -9,9 +9,6 @@ import java.lang.reflect.Field;
 /** The wallpaper: the video behind every editor, the film editor included. */
 public class WallpaperRenderer
 {
-    private static Field opacity;
-    private static boolean opacityLooked;
-
     /**
      * Draw the wallpaper over the whole screen, covering it and cropping what overflows, darkened a
      * little so the panels stay readable. Returns false when there is nothing to draw (off, no video,
@@ -24,13 +21,17 @@ public class WallpaperRenderer
 
         if (!wallpaper.enabled || w <= 0 || h <= 0)
         {
+            note("wallpaper off (enabled=" + wallpaper.enabled + ")");
+
             return false;
         }
 
-        BackdropVideo video = BannerRenderer.source(wallpaper.url, wallpaper.video);
+        BackdropVideo video = VideoSources.source(wallpaper.url, wallpaper.video);
 
         if (video == null)
         {
+            note("no wallpaper video chosen");
+
             return false;
         }
 
@@ -38,8 +39,12 @@ public class WallpaperRenderer
 
         if (frame == null || frame.width <= 0 || frame.height <= 0)
         {
+            note("waiting for the first frame" + (video.getError() == null ? "" : ": " + video.getError()));
+
             return false;
         }
+
+        note("drawing the wallpaper " + frame.width + "x" + frame.height);
 
         float areaAspect = (float) w / h;
         float textureAspect = (float) frame.width / frame.height;
@@ -61,39 +66,53 @@ public class WallpaperRenderer
         batcher.texturedBox(frame, 0xFFFFFFFF, 0, 0, w, h, u1, v1, u1 + cropW, v1 + cropH, frame.width, frame.height);
         batcher.box(0, 0, w, h, ((int) (Math.max(0F, Math.min(1F, config.darkness)) * 255F)) << 24);
 
-        /* The panels are drawn over it: let it show through them. BBS-RE keeps how opaque they stay in a
-         * public field it resets every frame; another BBS without it just keeps solid panels. */
-        setPanelOpacity(config.panelOpacity);
+        /* The panels are drawn over it: let it show through them (see BBSSettingsMixin) */
+        opacity = config.panelOpacity;
+        drawnAt = System.nanoTime();
 
         return true;
     }
 
-    private static void setPanelOpacity(float value)
+    private static String lastNote = "";
+
+    /** One line in the log each time the wallpaper's state changes, so a report says why it is not there. */
+    private static void note(String text)
     {
-        if (!opacityLooked)
+        if (!text.equals(lastNote))
         {
-            opacityLooked = true;
+            lastNote = text;
+            System.out.println("[BBS Backdrop] " + text);
+        }
+    }
 
+    private static volatile float opacity = 1F;
+    private static volatile long drawnAt;
+    private static int sunken = Integer.MIN_VALUE;
+
+    /** How opaque BBS's surfaces stay: below 1 while a wallpaper was drawn this frame, else 1. */
+    public static float panelAlpha()
+    {
+        return System.nanoTime() - drawnAt < 200_000_000L ? opacity : 1F;
+    }
+
+    /** The surface level BBS keeps solid (the timeline's floor). */
+    public static int sunkenLevel()
+    {
+        if (sunken == Integer.MIN_VALUE)
+        {
             try
             {
-                opacity = Class.forName("mchorse.bbs_mod.BBSSettings").getField("surfaceOpacity");
+                Field field = Class.forName("mchorse.bbs_mod.BBSSettings").getDeclaredField("SURFACE_SUNKEN");
+
+                field.setAccessible(true);
+                sunken = field.getInt(null);
             }
-            catch (Exception e)
+            catch (Throwable e)
             {
-                opacity = null;
+                sunken = -1;
             }
         }
 
-        if (opacity != null)
-        {
-            try
-            {
-                opacity.setFloat(null, value);
-            }
-            catch (Exception e)
-            {
-                opacity = null;
-            }
-        }
+        return sunken;
     }
 }

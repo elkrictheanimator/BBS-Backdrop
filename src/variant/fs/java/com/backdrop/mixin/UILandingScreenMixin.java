@@ -1,5 +1,7 @@
 package com.backdrop.mixin;
 
+import com.backdrop.client.BannerButton;
+import com.backdrop.client.BannerLayout;
 import com.backdrop.client.BannerRenderer;
 import mchorse.bbs_mod.ui.framework.UIContext;
 import mchorse.bbs_mod.ui.utils.Area;
@@ -17,9 +19,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(targets = "mchorse.bbs_mod.ui.dashboard.panels.landing.UILandingScreen", remap = false)
 public abstract class UILandingScreenMixin
 {
+    /** The Backdrop button on the banner, next to BBS's own. */
+    @Inject(method = "<init>", at = @At("TAIL"), remap = false, require = 0)
+    private void backdrop$button(CallbackInfo ci)
+    {
+        BannerButton.add(this);
+    }
+
     @Inject(method = "renderBanner", at = @At("HEAD"), cancellable = true, remap = false, require = 0)
     private void backdrop$draw(UIContext context, Area area, CallbackInfo ci)
     {
+        BannerLayout.apply(this);
+
         if (BannerRenderer.draw(context, area))
         {
             ci.cancel();

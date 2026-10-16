@@ -1,7 +1,9 @@
 package com.backdrop.spotify;
 
 import com.backdrop.BackdropConfig;
+import com.backdrop.Compat;
 import com.backdrop.Lang;
+import com.backdrop.client.BackdropAudio;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents;
 import net.minecraft.client.MinecraftClient;
@@ -26,7 +28,7 @@ public class SpotifyCard
     private static final int W = 224;
     private static final int H = 56;
     private static final int MARGIN = 8;
-    private static final Identifier COVER = new Identifier("backdrop", "spotify_cover");
+    private static final Identifier COVER = Compat.id("backdrop", "spotify_cover");
 
     private static NativeImageBackedTexture cover;
 
@@ -39,7 +41,11 @@ public class SpotifyCard
                 return;
             }
 
-            ScreenEvents.afterRender(screen).register((s, context, mouseX, mouseY, delta) -> draw(context, s.width, s.height, mouseX, mouseY));
+            ScreenEvents.afterRender(screen).register((s, context, mouseX, mouseY, delta) ->
+            {
+                BackdropAudio.keep();
+                draw(context, s.width, s.height, mouseX, mouseY);
+            });
             ScreenMouseEvents.allowMouseClick(screen).register((s, mouseX, mouseY, button) -> !click(s.width, s.height, mouseX, mouseY, button));
         });
     }
