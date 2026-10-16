@@ -75,5 +75,8 @@
 	"backdrop.config.banner.style": "Style",
 	"backdrop.config.banner.style-comment": "0 BBS slideshow, 1-2 gradient, 3 picture, 4 video",
 	"backdrop.config.banner.height": "Height",
-	"backdrop.config.banner.height-comment": ""
+	"backdrop.config.banner.height-comment": "",
+	"backdrop.ui.zoom": "Picture zoom (scale)",
+	"backdrop.ui.focus_x": "Picture position, left-right",
+	"backdrop.ui.focus_y": "Picture position, up-down"
 }

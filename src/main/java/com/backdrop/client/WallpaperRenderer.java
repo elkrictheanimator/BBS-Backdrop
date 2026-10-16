@@ -21,6 +21,8 @@ public class WallpaperRenderer
 
         if (!wallpaper.enabled || w <= 0 || h <= 0)
         {
+            note("wallpaper off (enabled=" + wallpaper.enabled + ")");
+
             return false;
         }
 
@@ -28,6 +30,8 @@ public class WallpaperRenderer
 
         if (video == null)
         {
+            note("no wallpaper video chosen");
+
             return false;
         }
 
@@ -35,8 +39,12 @@ public class WallpaperRenderer
 
         if (frame == null || frame.width <= 0 || frame.height <= 0)
         {
+            note("waiting for the first frame" + (video.getError() == null ? "" : ": " + video.getError()));
+
             return false;
         }
+
+        note("drawing the wallpaper " + frame.width + "x" + frame.height);
 
         float areaAspect = (float) w / h;
         float textureAspect = (float) frame.width / frame.height;
@@ -63,6 +71,18 @@ public class WallpaperRenderer
         drawnAt = System.nanoTime();
 
         return true;
+    }
+
+    private static String lastNote = "";
+
+    /** One line in the log each time the wallpaper's state changes, so a report says why it is not there. */
+    private static void note(String text)
+    {
+        if (!text.equals(lastNote))
+        {
+            lastNote = text;
+            System.out.println("[BBS Backdrop] " + text);
+        }
     }
 
     private static volatile float opacity = 1F;

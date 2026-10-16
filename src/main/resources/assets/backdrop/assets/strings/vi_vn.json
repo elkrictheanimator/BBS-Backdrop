@@ -75,5 +75,8 @@
 	"backdrop.config.banner.style": "Kiểu",
 	"backdrop.config.banner.style-comment": "0 ảnh BBS, 1-2 gradient, 3 ảnh riêng, 4 video",
 	"backdrop.config.banner.height": "Chiều cao",
-	"backdrop.config.banner.height-comment": ""
+	"backdrop.config.banner.height-comment": "",
+	"backdrop.ui.zoom": "Phóng to ảnh (scale)",
+	"backdrop.ui.focus_x": "Vị trí ảnh: trái-phải",
+	"backdrop.ui.focus_y": "Vị trí ảnh: trên-dưới"
 }

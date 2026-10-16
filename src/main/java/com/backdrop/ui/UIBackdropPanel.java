@@ -142,6 +142,13 @@ public class UIBackdropPanel extends UIOverlayPanel
 
         framer.h(Math.max(40, 240 * Math.max(1, c.height) / 440));
         items.add(framer);
+        /* The same framing as numbers, for when the wheel and the drag are not handy */
+        items.add(label("backdrop.ui.zoom"));
+        items.add(this.framing(c.zoom, 1F, 4F, (v) -> c.zoom = v));
+        items.add(label("backdrop.ui.focus_x"));
+        items.add(this.framing(c.focusX, 0F, 1F, (v) -> c.focusX = v));
+        items.add(label("backdrop.ui.focus_y"));
+        items.add(this.framing(c.focusY, 0F, 1F, (v) -> c.focusY = v));
         items.add(new UIButton(L10n.lang("backdrop.ui.reframe"), (b) ->
         {
             c.zoom = 1F;
@@ -216,6 +223,20 @@ public class UIBackdropPanel extends UIOverlayPanel
         sync.limit(-3000, 3000).integer();
         sync.setValue(source.sync);
         items.add(sync);
+    }
+
+    private UITrackpad framing(float value, float min, float max, Consumer<Float> set)
+    {
+        UITrackpad trackpad = new UITrackpad((v) ->
+        {
+            set.accept(v.floatValue());
+            BackdropConfig.peek().save();
+        });
+
+        trackpad.limit(min, max);
+        trackpad.setValue(value);
+
+        return trackpad;
     }
 
     private static UITrackpad trackpad(float value, Consumer<Float> set)

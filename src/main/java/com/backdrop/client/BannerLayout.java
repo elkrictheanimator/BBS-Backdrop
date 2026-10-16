@@ -37,6 +37,8 @@ public class BannerLayout
             card.getFlex().h.offset += diff;
             banner.getFlex().h.offset += diff;
 
+            int moved = 0;
+
             for (IUIElement child : card.getChildren())
             {
                 if (child == banner || !(child instanceof UIElement))
@@ -50,6 +52,7 @@ public class BannerLayout
                 if (flex.y.offset >= 150)
                 {
                     flex.y.offset += diff;
+                    moved++;
 
                     if (flex.h.value != 0F)
                     {
@@ -58,6 +61,7 @@ public class BannerLayout
                 }
             }
 
+            System.out.println("[BBS Backdrop] banner height " + (BackdropConfig.BANNER_H + wanted) + " applied to " + moved + " parts");
             APPLIED.put(screen, wanted);
             ((UIElement) screen).resize();
         }
