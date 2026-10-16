@@ -5,13 +5,12 @@ import com.backdrop.client.Assets;
 import com.backdrop.spotify.Spotify;
 import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.l10n.keys.IKey;
-import mchorse.bbs_mod.ui.dashboard.UIDashboard;
-import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanel;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
+import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIPromptOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIStringOverlayPanel;
 import mchorse.bbs_mod.ui.framework.elements.utils.UILabel;
@@ -25,16 +24,16 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * The Backdrop panel of the dashboard: the same values as BBS's settings screen, with pickers for
+ * The Backdrop panel, opened from the button on the landing screen's banner: the same values as BBS's settings screen, with pickers for
  * the video and the Spotify sign-in. Every label is a language key (assets/backdrop/assets/strings).
  */
-public class UIBackdropPanel extends UIDashboardPanel
+public class UIBackdropPanel extends UIOverlayPanel
 {
     private final UILabel spotifyStatus;
 
-    public UIBackdropPanel(UIDashboard dashboard)
+    public UIBackdropPanel()
     {
-        super(dashboard);
+        super(L10n.lang("backdrop.ui.title"));
 
         this.spotifyStatus = UI.label(IKey.constant(""));
 
@@ -74,10 +73,10 @@ public class UIBackdropPanel extends UIDashboardPanel
 
         UIElement column = UI.scrollView(5, 10, items.toArray(new UIElement[0]));
 
-        column.relative(this).xy(0, 0).w(1F).h(1F);
-        this.add(column);
+        column.relative(this.content).xy(0, 0).w(1F).h(1F);
+        this.content.add(column);
 
-        this.onAppear(this::refresh);
+        this.refresh();
     }
 
     private void refresh()
