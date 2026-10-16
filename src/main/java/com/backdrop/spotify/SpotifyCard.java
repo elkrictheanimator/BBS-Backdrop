@@ -1,6 +1,7 @@
 package com.backdrop.spotify;
 
 import com.backdrop.BackdropConfig;
+import com.backdrop.Compat;
 import com.backdrop.Lang;
 import com.backdrop.client.BackdropAudio;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
@@ -27,7 +28,7 @@ public class SpotifyCard
     private static final int W = 224;
     private static final int H = 56;
     private static final int MARGIN = 8;
-    private static final Identifier COVER = new Identifier("backdrop", "spotify_cover");
+    private static final Identifier COVER = Compat.id("backdrop", "spotify_cover");
 
     private static NativeImageBackedTexture cover;
 
