@@ -1,14 +1,10 @@
 package com.backdrop.ui;
 
-import com.backdrop.BackdropAddon;
+import com.backdrop.BackdropConfig;
 import com.backdrop.client.Assets;
 import com.backdrop.spotify.Spotify;
 import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.l10n.keys.IKey;
-import mchorse.bbs_mod.settings.values.core.ValueString;
-import mchorse.bbs_mod.settings.values.numeric.ValueBoolean;
-import mchorse.bbs_mod.settings.values.numeric.ValueFloat;
-import mchorse.bbs_mod.settings.values.numeric.ValueInt;
 import mchorse.bbs_mod.ui.dashboard.UIDashboard;
 import mchorse.bbs_mod.ui.dashboard.panels.UIDashboardPanel;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
@@ -25,6 +21,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * The Backdrop panel of the dashboard: the same values as BBS's settings screen, with pickers for
@@ -42,31 +40,21 @@ public class UIBackdropPanel extends UIDashboardPanel
 
         List<UIElement> items = new ArrayList<>();
 
+        BackdropConfig c = BackdropConfig.get();
+
         items.add(title("backdrop.ui.wallpaper"));
-        items.add(toggle("backdrop.ui.enabled", BackdropAddon.wallpaperEnabled));
-        items.add(this.videoButton("backdrop.ui.pick_video", BackdropAddon.wallpaperVideo, BackdropAddon.wallpaperUrl));
-        items.add(this.urlButton("backdrop.ui.paste_url", BackdropAddon.wallpaperUrl));
-        items.add(label("backdrop.ui.volume"));
-        items.add(trackpad(BackdropAddon.wallpaperVolume));
-        items.add(label("backdrop.ui.sync"));
-        items.add(trackpad(BackdropAddon.wallpaperSync));
+        this.source(items, c.wallpaper);
         items.add(label("backdrop.ui.darkness"));
-        items.add(trackpad(BackdropAddon.darkness));
+        items.add(trackpad(c.darkness, (v) -> c.darkness = v));
         items.add(label("backdrop.ui.panel_opacity"));
-        items.add(trackpad(BackdropAddon.panelOpacity));
+        items.add(trackpad(c.panelOpacity, (v) -> c.panelOpacity = v));
 
         items.add(title("backdrop.ui.banner"));
-        items.add(toggle("backdrop.ui.enabled", BackdropAddon.bannerEnabled));
-        items.add(this.videoButton("backdrop.ui.pick_video", BackdropAddon.bannerVideo, BackdropAddon.bannerUrl));
-        items.add(this.urlButton("backdrop.ui.paste_url", BackdropAddon.bannerUrl));
-        items.add(label("backdrop.ui.volume"));
-        items.add(trackpad(BackdropAddon.bannerVolume));
-        items.add(label("backdrop.ui.sync"));
-        items.add(trackpad(BackdropAddon.bannerSync));
+        this.source(items, c.banner);
 
         items.add(title("backdrop.ui.spotify"));
         items.add(label("backdrop.ui.spotify_help"));
-        items.add(this.textButton("backdrop.ui.client_id", BackdropAddon.spotifyClientId));
+        items.add(this.textButton("backdrop.ui.client_id", () -> c.spotify.clientId, (v) -> c.spotify.clientId = v));
         items.add(new UIButton(L10n.lang("backdrop.ui.login"), (b) ->
         {
             Spotify.login();
@@ -77,7 +65,11 @@ public class UIBackdropPanel extends UIDashboardPanel
             Spotify.logout();
             this.refresh();
         }));
-        items.add(toggle("backdrop.ui.card", BackdropAddon.spotifyCard));
+        items.add(new UIToggle(L10n.lang("backdrop.ui.card"), c.spotify.card, (t) ->
+        {
+            c.spotify.card = t.getValue();
+            c.save();
+        }));
         items.add(this.spotifyStatus);
 
         UIElement column = UI.scrollView(5, 10, items.toArray(new UIElement[0]));
@@ -103,35 +95,50 @@ public class UIBackdropPanel extends UIDashboardPanel
         return UI.label(L10n.lang(key));
     }
 
-    private static UIToggle toggle(String key, ValueBoolean value)
+    private void source(List<UIElement> items, BackdropConfig.Source source)
     {
-        return new UIToggle(L10n.lang(key), value.get(), (t) -> value.set(t.getValue()));
+        BackdropConfig c = BackdropConfig.get();
+
+        items.add(new UIToggle(L10n.lang("backdrop.ui.enabled"), source.enabled, (t) ->
+        {
+            source.enabled = t.getValue();
+            c.save();
+        }));
+        items.add(this.videoButton(source));
+        items.add(this.textButton("backdrop.ui.paste_url", () -> source.url, (v) -> source.url = v));
+        items.add(label("backdrop.ui.volume"));
+        items.add(trackpad(source.volume, (v) -> source.volume = v));
+        items.add(label("backdrop.ui.sync"));
+
+        UITrackpad sync = new UITrackpad((v) ->
+        {
+            source.sync = v.intValue();
+            c.save();
+        });
+
+        sync.limit(-3000, 3000).integer();
+        sync.setValue(source.sync);
+        items.add(sync);
     }
 
-    private static UITrackpad trackpad(ValueFloat value)
+    private static UITrackpad trackpad(float value, Consumer<Float> set)
     {
-        UITrackpad trackpad = new UITrackpad((v) -> value.set(v.floatValue()));
+        UITrackpad trackpad = new UITrackpad((v) ->
+        {
+            set.accept(v.floatValue());
+            BackdropConfig.get().save();
+        });
 
         trackpad.limit(0, 1);
-        trackpad.setValue(value.get());
-
-        return trackpad;
-    }
-
-    private static UITrackpad trackpad(ValueInt value)
-    {
-        UITrackpad trackpad = new UITrackpad((v) -> value.set(v.intValue()));
-
-        trackpad.limit(-3000, 3000).integer();
-        trackpad.setValue(value.get());
+        trackpad.setValue(value);
 
         return trackpad;
     }
 
     /** A video of the assets' video folder; picking one clears the web address, which would win over it. */
-    private UIButton videoButton(String key, ValueString video, ValueString url)
+    private UIButton videoButton(BackdropConfig.Source source)
     {
-        return new UIButton(L10n.lang(key), (b) ->
+        return new UIButton(L10n.lang("backdrop.ui.pick_video"), (b) ->
         {
             File[] files = Assets.videos().listFiles();
             List<String> names = new ArrayList<>();
@@ -151,30 +158,32 @@ public class UIBackdropPanel extends UIDashboardPanel
 
             UIStringOverlayPanel panel = new UIStringOverlayPanel(L10n.lang("backdrop.ui.pick_video"), true, names, (name) ->
             {
-                video.set(name == null ? "" : name);
+                source.video = name == null ? "" : name;
 
                 if (name != null && !name.isEmpty())
                 {
-                    url.set("");
+                    source.url = "";
+                    source.enabled = true;
                 }
+
+                BackdropConfig.get().save();
             });
 
-            UIOverlay.addOverlay(this.getContext(), panel.set(video.get()));
+            UIOverlay.addOverlay(this.getContext(), panel.set(source.video));
         });
     }
 
-    private UIButton urlButton(String key, ValueString url)
-    {
-        return this.textButton(key, url);
-    }
-
-    private UIButton textButton(String key, ValueString value)
+    private UIButton textButton(String key, Supplier<String> get, Consumer<String> set)
     {
         return new UIButton(L10n.lang(key), (b) ->
         {
-            UIPromptOverlayPanel panel = new UIPromptOverlayPanel(L10n.lang(key), L10n.lang(key + "_help"), (text) -> value.set(text == null ? "" : text.trim()));
+            UIPromptOverlayPanel panel = new UIPromptOverlayPanel(L10n.lang(key), L10n.lang(key + "_help"), (text) ->
+            {
+                set.accept(text == null ? "" : text.trim());
+                BackdropConfig.get().save();
+            });
 
-            panel.text.setText(value.get());
+            panel.text.setText(get.get());
             UIOverlay.addOverlay(this.getContext(), panel);
         });
     }

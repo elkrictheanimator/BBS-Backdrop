@@ -1,6 +1,6 @@
 package com.backdrop.spotify;
 
-import com.backdrop.BackdropAddon;
+import com.backdrop.BackdropConfig;
 import com.backdrop.Lang;
 import com.backdrop.client.Chat;
 import com.google.gson.JsonArray;
@@ -80,12 +80,12 @@ public class Spotify
 
     public static boolean configured()
     {
-        return BackdropAddon.spotifyClientId != null && !BackdropAddon.spotifyClientId.get().trim().isEmpty();
+        return !BackdropConfig.get().spotify.clientId.trim().isEmpty();
     }
 
     public static boolean signedIn()
     {
-        return BackdropAddon.spotifyRefreshToken != null && !BackdropAddon.spotifyRefreshToken.get().isEmpty();
+        return !BackdropConfig.get().spotify.refreshToken.isEmpty();
     }
 
     /** Progress as it is now: the last reading, carried on by the clock while it plays. */
@@ -375,7 +375,7 @@ public class Spotify
             }
         }
 
-        status = Lang.tr("Spotify session ended: sign in again in the Backdrop panel", "Phiên Spotify đã hết: đăng nhập lại trong bảng Backdrop");
+        status = Lang.tr("Spotify session ended: run /backdrop spotify login", "Phiên Spotify đã hết: gõ /backdrop spotify login");
 
         return new Response(401, "");
     }
@@ -400,25 +400,16 @@ public class Spotify
     /** The access token, asking for a new one when the old one is (about to be) out of date. */
     private static String token(boolean force) throws Exception
     {
-        String refresh = BackdropAddon.spotifyRefreshToken.get();
+        BackdropConfig.Spotify spotify = BackdropConfig.get().spotify;
 
-        if (refresh.isEmpty())
+        if (spotify.refreshToken.isEmpty())
         {
             return null;
         }
 
-        long expiresAt = 0;
-
-        try
+        if (force || spotify.accessToken.isEmpty() || System.currentTimeMillis() > spotify.expiresAt - 30_000L)
         {
-            expiresAt = Long.parseLong(BackdropAddon.spotifyExpiresAt.get());
-        }
-        catch (NumberFormatException ignored)
-        {}
-
-        if (force || BackdropAddon.spotifyAccessToken.get().isEmpty() || System.currentTimeMillis() > expiresAt - 30_000L)
-        {
-            Response response = form("grant_type=refresh_token&refresh_token=" + enc(refresh) + "&client_id=" + enc(BackdropAddon.spotifyClientId.get().trim()));
+            Response response = form("grant_type=refresh_token&refresh_token=" + enc(spotify.refreshToken) + "&client_id=" + enc(spotify.clientId.trim()));
 
             if (response.code != 200)
             {
@@ -428,7 +419,7 @@ public class Spotify
             storeTokens(JsonParser.parseString(response.body).getAsJsonObject());
         }
 
-        return BackdropAddon.spotifyAccessToken.get();
+        return spotify.accessToken;
     }
 
     private static Response form(String body) throws Exception
@@ -453,13 +444,17 @@ public class Spotify
 
     private static void storeTokens(JsonObject json)
     {
-        BackdropAddon.spotifyAccessToken.set(json.get("access_token").getAsString());
-        BackdropAddon.spotifyExpiresAt.set(String.valueOf(System.currentTimeMillis() + json.get("expires_in").getAsLong() * 1000L));
+        BackdropConfig config = BackdropConfig.get();
+
+        config.spotify.accessToken = json.get("access_token").getAsString();
+        config.spotify.expiresAt = System.currentTimeMillis() + json.get("expires_in").getAsLong() * 1000L;
 
         if (json.has("refresh_token") && !json.get("refresh_token").isJsonNull())
         {
-            BackdropAddon.spotifyRefreshToken.set(json.get("refresh_token").getAsString());
+            config.spotify.refreshToken = json.get("refresh_token").getAsString();
         }
+
+        config.save();
     }
 
     private static String enc(String value)
@@ -471,9 +466,12 @@ public class Spotify
 
     public static void logout()
     {
-        BackdropAddon.spotifyAccessToken.set("");
-        BackdropAddon.spotifyRefreshToken.set("");
-        BackdropAddon.spotifyExpiresAt.set("0");
+        BackdropConfig config = BackdropConfig.get();
+
+        config.spotify.accessToken = "";
+        config.spotify.refreshToken = "";
+        config.spotify.expiresAt = 0;
+        config.save();
 
         active = false;
         playing = false;
@@ -486,7 +484,7 @@ public class Spotify
     {
         if (!configured())
         {
-            Chat.say(Lang.tr("Set your Client ID first (Backdrop panel or settings)", "Hãy đặt Client ID trước (trong bảng Backdrop hoặc Cài đặt)"));
+            Chat.say(Lang.tr("Set your Client ID first: /backdrop spotify id <Client ID>", "Hãy đặt Client ID trước: /backdrop spotify id <Client ID>"));
 
             return;
         }
@@ -513,7 +511,7 @@ public class Spotify
                 String challenge = Base64.getUrlEncoder().withoutPadding().encodeToString(MessageDigest.getInstance("SHA-256").digest(verifier.getBytes(StandardCharsets.US_ASCII)));
                 String state = Long.toHexString(random.nextLong());
                 String url = "https://accounts.spotify.com/authorize?response_type=code"
-                    + "&client_id=" + enc(BackdropAddon.spotifyClientId.get().trim())
+                    + "&client_id=" + enc(BackdropConfig.get().spotify.clientId.trim())
                     + "&scope=" + enc(SCOPES)
                     + "&redirect_uri=" + enc(REDIRECT)
                     + "&state=" + state
@@ -553,7 +551,7 @@ public class Spotify
 
                 Response response = form("grant_type=authorization_code&code=" + enc(code)
                     + "&redirect_uri=" + enc(REDIRECT)
-                    + "&client_id=" + enc(BackdropAddon.spotifyClientId.get().trim())
+                    + "&client_id=" + enc(BackdropConfig.get().spotify.clientId.trim())
                     + "&code_verifier=" + enc(verifier));
 
                 if (response.code != 200)
