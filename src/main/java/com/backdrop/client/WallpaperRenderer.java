@@ -9,9 +9,6 @@ import java.lang.reflect.Field;
 /** The wallpaper: the video behind every editor, the film editor included. */
 public class WallpaperRenderer
 {
-    private static Field opacity;
-    private static boolean opacityLooked;
-
     /**
      * Draw the wallpaper over the whole screen, covering it and cropping what overflows, darkened a
      * little so the panels stay readable. Returns false when there is nothing to draw (off, no video,
@@ -61,39 +58,41 @@ public class WallpaperRenderer
         batcher.texturedBox(frame, 0xFFFFFFFF, 0, 0, w, h, u1, v1, u1 + cropW, v1 + cropH, frame.width, frame.height);
         batcher.box(0, 0, w, h, ((int) (Math.max(0F, Math.min(1F, config.darkness)) * 255F)) << 24);
 
-        /* The panels are drawn over it: let it show through them. BBS-RE keeps how opaque they stay in a
-         * public field it resets every frame; another BBS without it just keeps solid panels. */
-        setPanelOpacity(config.panelOpacity);
+        /* The panels are drawn over it: let it show through them (see BBSSettingsMixin) */
+        opacity = config.panelOpacity;
+        drawnAt = System.nanoTime();
 
         return true;
     }
 
-    private static void setPanelOpacity(float value)
+    private static volatile float opacity = 1F;
+    private static volatile long drawnAt;
+    private static int sunken = Integer.MIN_VALUE;
+
+    /** How opaque BBS's surfaces stay: below 1 while a wallpaper was drawn this frame, else 1. */
+    public static float panelAlpha()
     {
-        if (!opacityLooked)
-        {
-            opacityLooked = true;
+        return System.nanoTime() - drawnAt < 200_000_000L ? opacity : 1F;
+    }
 
-            try
-            {
-                opacity = Class.forName("mchorse.bbs_mod.BBSSettings").getField("surfaceOpacity");
-            }
-            catch (Exception e)
-            {
-                opacity = null;
-            }
-        }
-
-        if (opacity != null)
+    /** The surface level BBS keeps solid (the timeline's floor). */
+    public static int sunkenLevel()
+    {
+        if (sunken == Integer.MIN_VALUE)
         {
             try
             {
-                opacity.setFloat(null, value);
+                Field field = Class.forName("mchorse.bbs_mod.BBSSettings").getDeclaredField("SURFACE_SUNKEN");
+
+                field.setAccessible(true);
+                sunken = field.getInt(null);
             }
-            catch (Exception e)
+            catch (Throwable e)
             {
-                opacity = null;
+                sunken = -1;
             }
         }
+
+        return sunken;
     }
 }

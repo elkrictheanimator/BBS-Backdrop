@@ -4,6 +4,7 @@
 	"package": "com.backdrop.mixin",
 	"compatibilityLevel": "JAVA_17",
 	"client": [
+		"BBSSettingsMixin",
 		"UIDashboardMixin"
 	],
 	"injectors": {

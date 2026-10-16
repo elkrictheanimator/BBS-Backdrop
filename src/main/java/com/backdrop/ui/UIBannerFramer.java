@@ -19,17 +19,20 @@ public class UIBannerFramer extends UIElement
 {
     private static final float MAX_ZOOM = 4F;
 
-    private final float aspect;
 
     private boolean dragging;
     private int lastX;
     private int lastY;
 
-    public UIBannerFramer(float aspect)
+    public UIBannerFramer()
     {
         super();
+    }
 
-        this.aspect = aspect;
+    /** The banner's aspect now: its width is the card's, its height the setting. */
+    private static float aspect()
+    {
+        return 440F / Math.max(1, BackdropConfig.peek().height);
     }
 
     private Texture texture()
@@ -84,7 +87,7 @@ public class UIBannerFramer extends UIElement
     private void drag(UIContext context, Texture texture)
     {
         BackdropConfig config = BackdropConfig.peek();
-        float[] crop = BannerRenderer.crop(texture, this.aspect);
+        float[] crop = BannerRenderer.crop(texture, aspect());
         float cropW = crop[2] - crop[0];
         float cropH = crop[3] - crop[1];
         float slackW = texture.width - cropW;
@@ -130,7 +133,7 @@ public class UIBannerFramer extends UIElement
                 this.drag(context, texture);
             }
 
-            float[] crop = BannerRenderer.crop(texture, this.aspect);
+            float[] crop = BannerRenderer.crop(texture, aspect());
 
             context.batcher.texturedBox(texture, Colors.WHITE, this.area.x, this.area.y, this.area.w, this.area.h, crop[0], crop[1], crop[2], crop[3], texture.width, texture.height);
 

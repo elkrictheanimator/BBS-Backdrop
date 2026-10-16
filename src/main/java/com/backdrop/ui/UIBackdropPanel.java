@@ -138,7 +138,7 @@ public class UIBackdropPanel extends UIOverlayPanel
             c.save();
         }));
 
-        UIBannerFramer framer = new UIBannerFramer((float) 440 / Math.max(1, c.height));
+        UIBannerFramer framer = new UIBannerFramer();
 
         framer.h(Math.max(40, 240 * Math.max(1, c.height) / 440));
         items.add(framer);

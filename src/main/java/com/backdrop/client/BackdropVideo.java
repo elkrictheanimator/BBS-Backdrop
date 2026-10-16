@@ -105,15 +105,9 @@ public class BackdropVideo
             return null;
         }
 
-        /* Several places can ask for the same video with different volumes (the banner and the wallpaper):
-         * sound is wanted while anyone asked for it a moment ago, so they don't take turns restarting it */
-        if (volume > 0F)
-        {
-            this.soundUntil = now + SOUND_HOLD_NANOS;
-            this.soundVolume = volume;
-        }
-
-        boolean wantSound = now < this.soundUntil;
+        /* The sound is not played from here: BackdropAudio plays it on its own, so a picture that
+         * stutters does not drag it along, and it goes on when the banner is not on screen */
+        boolean wantSound = false;
         Session current = this.session;
 
         /* The sound switched on or off, or the session ended: start a fresh one */

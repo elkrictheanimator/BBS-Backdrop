@@ -2,6 +2,7 @@ package com.backdrop.spotify;
 
 import com.backdrop.BackdropConfig;
 import com.backdrop.Lang;
+import com.backdrop.client.BackdropAudio;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents;
 import net.minecraft.client.MinecraftClient;
@@ -39,7 +40,11 @@ public class SpotifyCard
                 return;
             }
 
-            ScreenEvents.afterRender(screen).register((s, context, mouseX, mouseY, delta) -> draw(context, s.width, s.height, mouseX, mouseY));
+            ScreenEvents.afterRender(screen).register((s, context, mouseX, mouseY, delta) ->
+            {
+                BackdropAudio.keep();
+                draw(context, s.width, s.height, mouseX, mouseY);
+            });
             ScreenMouseEvents.allowMouseClick(screen).register((s, mouseX, mouseY, button) -> !click(s.width, s.height, mouseX, mouseY, button));
         });
     }
