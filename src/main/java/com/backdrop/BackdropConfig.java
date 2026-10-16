@@ -43,7 +43,19 @@ public class BackdropConfig
         public boolean card = true;
     }
 
+    public static final int BANNER_H = 180;
+
     public Source banner = new Source(0.5F);
+
+    /** 0 BBS's slideshow, 1 / 2 two-colour gradient (vertical / horizontal), 3 your picture, 4 video. */
+    public int bannerStyle;
+    public int colorStart = 0x1b2a4e;
+    public int colorEnd = 0x8a3ffc;
+    public Link image;
+    public float zoom = 1F;
+    public float focusX = 0.5F;
+    public float focusY = 0.5F;
+    public int height = BANNER_H;
     public Source wallpaper = new Source(0F);
     public float darkness = 0.4F;
     public float panelOpacity = 0.72F;
