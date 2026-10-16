@@ -1,4 +1,4 @@
-# Backdrop (test builds)
+# BBS Backdrop (test builds)
 
 Addon for BBS FS 2.7: video **with sound** behind BBS, and **Spotify** in it.
 Addon cho BBS FS 2.7: video có tiếng làm nền, kèm Spotify.

@@ -75,6 +75,17 @@ public class BackdropConfig
 
     public static volatile Bridge bridge;
 
+    /** The snapshot as it is, without reading the settings again: for editing, so a half-made edit is not undone. */
+    public static synchronized BackdropConfig peek()
+    {
+        if (instance == null)
+        {
+            instance = new BackdropConfig();
+        }
+
+        return instance;
+    }
+
     public static synchronized BackdropConfig get()
     {
         if (instance == null)

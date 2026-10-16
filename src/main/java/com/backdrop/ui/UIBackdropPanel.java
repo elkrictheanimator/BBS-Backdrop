@@ -190,7 +190,7 @@ public class UIBackdropPanel extends UIOverlayPanel
 
     private void source(List<UIElement> items, BackdropConfig.Source source)
     {
-        BackdropConfig c = BackdropConfig.get();
+        BackdropConfig c = BackdropConfig.peek();
 
         if (source == c.wallpaper)
         {
@@ -223,7 +223,7 @@ public class UIBackdropPanel extends UIOverlayPanel
         UITrackpad trackpad = new UITrackpad((v) ->
         {
             set.accept(v.floatValue());
-            BackdropConfig.get().save();
+            BackdropConfig.peek().save();
         });
 
         trackpad.limit(0, 1);
@@ -261,17 +261,17 @@ public class UIBackdropPanel extends UIOverlayPanel
                 {
                     source.url = "";
 
-                    if (source == BackdropConfig.get().wallpaper)
+                    if (source == BackdropConfig.peek().wallpaper)
                     {
                         source.enabled = true;
                     }
                     else
                     {
-                        BackdropConfig.get().bannerStyle = 4;
+                        BackdropConfig.peek().bannerStyle = 4;
                     }
                 }
 
-                BackdropConfig.get().save();
+                BackdropConfig.peek().save();
             });
 
             UIOverlay.addOverlay(this.getContext(), panel.set(source.video));
@@ -285,7 +285,7 @@ public class UIBackdropPanel extends UIOverlayPanel
             UIPromptOverlayPanel panel = new UIPromptOverlayPanel(L10n.lang(key), L10n.lang(key + "_help"), (text) ->
             {
                 set.accept(text == null ? "" : text.trim());
-                BackdropConfig.get().save();
+                BackdropConfig.peek().save();
             });
 
             panel.text.setText(get.get());

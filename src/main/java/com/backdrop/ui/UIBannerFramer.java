@@ -34,7 +34,7 @@ public class UIBannerFramer extends UIElement
 
     private Texture texture()
     {
-        BackdropConfig config = BackdropConfig.get();
+        BackdropConfig config = BackdropConfig.peek();
 
         return config.image == null ? null : BBSModClient.getTextures().getTexture(config.image);
     }
@@ -72,7 +72,7 @@ public class UIBannerFramer extends UIElement
             return super.subMouseScrolled(context);
         }
 
-        BackdropConfig config = BackdropConfig.get();
+        BackdropConfig config = BackdropConfig.peek();
 
         /* Each notch is a tenth, so the zoom feels the same near 1x and near 4x */
         config.zoom = Math.max(1F, Math.min(MAX_ZOOM, config.zoom * (float) Math.pow(1.1, context.mouseWheel)));
@@ -83,7 +83,7 @@ public class UIBannerFramer extends UIElement
 
     private void drag(UIContext context, Texture texture)
     {
-        BackdropConfig config = BackdropConfig.get();
+        BackdropConfig config = BackdropConfig.peek();
         float[] crop = BannerRenderer.crop(texture, this.aspect);
         float cropW = crop[2] - crop[0];
         float cropH = crop[3] - crop[1];
