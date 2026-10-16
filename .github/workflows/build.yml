@@ -37,7 +37,14 @@ jobs:
       - name: Build the addon
         run: |
           chmod +x gradlew
-          ./gradlew build --no-daemon -Dorg.gradle.jvmargs=-Xmx3G
+          set +e
+          ./gradlew build --no-daemon -Dorg.gradle.jvmargs=-Xmx3G > build.log 2>&1
+          code=$?
+          tail -n 40 build.log
+          if [ "$code" != "0" ]; then
+            grep -E "error:|What went wrong" -A2 build.log | head -40 | while IFS= read -r line; do echo "::error::$line"; done
+            exit 1
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
