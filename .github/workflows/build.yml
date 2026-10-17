@@ -83,23 +83,32 @@ jobs:
             build/libs/*.jar
             !build/libs/*-sources.jar
 
-  # A test build anyone with access can download from the Releases page: one jar per BBS build that compiled.
+  # The release on the Releases page: one jar per BBS build that compiled.
   release:
     needs: build
     if: github.ref == 'refs/heads/master' && !cancelled()
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
           path: jars
           pattern: jar-*
           merge-multiple: true
 
-      - name: Test release
+      - name: Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           ls jars
-          gh release create "test-${{ github.run_number }}" jars/*.jar --repo "${{ github.repository }}" --prerelease \
-            --title "Test build ${{ github.run_number }}" \
-            --notes "Test build from commit ${{ github.sha }}. One jar per BBS build (name ends with the target). Not for public release."
+          repo="${{ github.repository }}"
+          version="$(grep '^mod_version=' gradle.properties | cut -d= -f2)"
+          # The old test builds are gone for good; the release of this version is made fresh from this commit.
+          for tag in $(gh release list --repo "$repo" --limit 200 --json tagName --jq '.[].tagName' | grep -E '^test-' || true); do
+            gh release delete "$tag" --repo "$repo" --yes --cleanup-tag || true
+          done
+          gh release delete "v$version" --repo "$repo" --yes --cleanup-tag || true
+          gh release create "v$version" jars/*.jar --repo "$repo" --latest \
+            --title "BBS BackDrop $version" \
+            --notes "BBS BackDrop $version. Jars: BBS-BackDrop-$version-fs-1.20.4.jar for BBS FS on Minecraft 1.20.4; BBS-BackDrop-Port-$version-fs-1.20.1.jar for BBS FS on Minecraft 1.20.1. Java 17."
