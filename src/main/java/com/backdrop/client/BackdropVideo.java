@@ -52,6 +52,7 @@ public class BackdropVideo
     /* Frames decoded ahead of the clock: enough to ride out a hiccup, few enough to stay lean */
     private static final int QUEUE = 6;
 
+    private static final double LAG_LIMIT = 0.6;
     private static final long IDLE_NANOS = 3_000_000_000L;
     private static final long SOUND_HOLD_NANOS = 1_000_000_000L;
     private static final long RETRY_NANOS = 5_000_000_000L;
@@ -67,6 +68,8 @@ public class BackdropVideo
     /* When the video first started, and how long it is: a session begun later seeks to where it would be by now, so leaving the page and coming back does not start it over */
     private volatile long epoch;
     private volatile double duration;
+    private volatile int[] probedSize;
+    private volatile double probedFps;
     private volatile long failedAt;
     private volatile String error;
     private long soundUntil;
@@ -166,6 +169,33 @@ public class BackdropVideo
         {
             this.upload(picked.data, current.width, current.height);
             current.free.offer(picked.data);
+
+            current.shown = picked.time;
+            current.hasShown = true;
+        }
+
+        /* Following the sound, a picture that cannot keep up (the machine hitched) does not run
+         * fast to catch up: after a moment behind, it starts over at where the sound is now */
+        if (current.synced)
+        {
+            double lag = target - current.shown;
+
+            if (!current.hasShown ? now - current.startedAt > 2_500_000_000L : lag > LAG_LIMIT)
+            {
+                if (current.lagSince == 0)
+                {
+                    current.lagSince = now;
+                }
+                else if (now - current.lagSince > 400_000_000L && now - current.startedAt > 1_500_000_000L)
+                {
+                    current.shutdown();
+                    this.session = null;
+                }
+            }
+            else
+            {
+                current.lagSince = 0;
+            }
         }
 
         return this.texture;
@@ -211,6 +241,11 @@ public class BackdropVideo
         public volatile boolean finished;
         public volatile float volume;
 
+        public volatile double shown;
+        public volatile boolean hasShown;
+        public long lagSince;
+        public final long startedAt = System.nanoTime();
+
         private volatile boolean stop;
         private volatile Process videoProcess;
         private volatile Process audioProcess;
@@ -229,7 +264,7 @@ public class BackdropVideo
 
         /* Following the sound that plays on its own: where it was when this run began, and which run of it that was */
         public final boolean synced;
-        public final double audioBase;
+        public volatile double audioBase;
         public final int audioGeneration;
         private final String audioKey;
 
@@ -349,11 +384,35 @@ public class BackdropVideo
                 String input = this.resolveInput();
 
                 double fps = DEFAULT_FPS;
-                int[] size = this.probe(ffmpeg, input);
+                /* What the video is does not change between runs: ask ffmpeg once, so a restart is quick */
+                int[] size = BackdropVideo.this.probedSize;
 
                 if (size == null)
                 {
-                    return;
+                    size = this.probe(ffmpeg, input);
+
+                    if (size == null)
+                    {
+                        return;
+                    }
+
+                    BackdropVideo.this.probedFps = this.fps;
+                    BackdropVideo.this.probedSize = size;
+                }
+                else
+                {
+                    this.fps = BackdropVideo.this.probedFps;
+                }
+
+                /* Where the sound is now, after the time spent getting here */
+                if (this.synced)
+                {
+                    double now = BackdropAudio.position(this.audioKey);
+
+                    if (now >= 0)
+                    {
+                        this.audioBase = now;
+                    }
                 }
 
                 long begun = System.nanoTime();

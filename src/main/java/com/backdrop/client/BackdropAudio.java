@@ -18,7 +18,7 @@ public class BackdropAudio
 {
     private static final int SAMPLE_RATE = 44100;
     private static final int FRAME_BYTES = 4;
-    private static final long IDLE_NANOS = 3_000_000_000L;
+    private static final long IDLE_NANOS = 20_000_000_000L;
     private static final long RETRY_MS = 5000;
 
     private static volatile long lastKeep;
