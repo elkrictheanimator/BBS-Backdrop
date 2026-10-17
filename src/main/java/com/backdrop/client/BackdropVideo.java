@@ -113,10 +113,12 @@ public class BackdropVideo
         /* The sound is not played from here: BackdropAudio plays it on its own, so a picture that
          * stutters does not drag it along, and it goes on when the banner is not on screen */
         boolean wantSound = false;
+        String key = this.url != null ? this.url : this.file.getAbsolutePath();
+        boolean synced = BackdropAudio.position(key) >= 0;
         Session current = this.session;
 
         /* The sound switched on or off, or the session ended: start a fresh one */
-        if (current != null && (current.sound != wantSound || current.finished))
+        if (current != null && (current.sound != wantSound || current.finished || current.synced != synced || (synced && current.audioGeneration != BackdropAudio.generation())))
         {
             current.shutdown();
             current = null;
@@ -225,10 +227,23 @@ public class BackdropVideo
         private double deadBase = -1;
         private long deadAt;
 
+        /* Following the sound that plays on its own: where it was when this run began, and which run of it that was */
+        public final boolean synced;
+        public final double audioBase;
+        public final int audioGeneration;
+        private final String audioKey;
+
         public Session(boolean sound)
         {
             this.sound = sound;
             this.volume = 1F;
+            this.audioKey = BackdropVideo.this.url != null ? BackdropVideo.this.url : BackdropVideo.this.file.getAbsolutePath();
+            this.audioGeneration = BackdropAudio.generation();
+
+            double base = BackdropAudio.position(this.audioKey);
+
+            this.synced = base >= 0;
+            this.audioBase = base;
         }
 
         public void start()
@@ -268,6 +283,20 @@ public class BackdropVideo
         {
             double time;
             long now = System.nanoTime();
+
+            /* The picture follows the sound: it is where the sound has got to since this run began, so a stutter in one catches the other up */
+            if (this.synced)
+            {
+                double position = BackdropAudio.position(this.audioKey);
+
+                if (position >= 0)
+                {
+                    this.lastClock = Math.max(0, position - this.audioBase);
+
+                    return this.lastClock;
+                }
+            }
+
             boolean useSound = this.sound && !this.audioDead && this.line != null && this.written > 0;
 
             if (useSound)
@@ -335,7 +364,8 @@ public class BackdropVideo
                 }
 
                 double length = BackdropVideo.this.duration;
-                double resume = length > 1 ? ((begun - BackdropVideo.this.epoch) / 1e9) % length : 0;
+                double elapsed = this.synced ? this.audioBase : (begun - BackdropVideo.this.epoch) / 1e9;
+                double resume = length > 1 ? elapsed % length : 0;
 
                 fps = this.fps;
 

@@ -27,6 +27,30 @@ public class BackdropAudio
     private static volatile String wantedInput = "";
     private static Thread thread;
 
+    /* The device that is playing now, so the picture can follow the sound */
+    private static volatile SourceDataLine current;
+    private static volatile String currentKey = "";
+    private static volatile int generation;
+
+    /** Seconds of sound that have come out of the speakers for this input (counting loops), or -1 when it is not the one playing. */
+    public static double position(String key)
+    {
+        SourceDataLine device = current;
+
+        if (device == null || !key.equals(currentKey) || !device.isOpen())
+        {
+            return -1;
+        }
+
+        return device.getLongFramePosition() / (double) SAMPLE_RATE;
+    }
+
+    /** Changes every time the sound starts over, which also starts its position over. */
+    public static int generation()
+    {
+        return generation;
+    }
+
     /** Called every frame a BBS screen is drawn: says that the sound is wanted, and which. */
     public static synchronized void keep()
     {
@@ -126,6 +150,9 @@ public class BackdropAudio
             device = AudioSystem.getSourceDataLine(format);
             device.open(format, SAMPLE_RATE / 5 * FRAME_BYTES);
             device.start();
+            generation += 1;
+            currentKey = key;
+            current = device;
 
             InputStream stream = process.getInputStream();
             byte[] bytes = new byte[2048];
@@ -160,6 +187,11 @@ public class BackdropAudio
 
             if (device != null)
             {
+                if (current == device)
+                {
+                    current = null;
+                }
+
                 device.close();
             }
         }
