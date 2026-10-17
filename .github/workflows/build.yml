@@ -25,6 +25,8 @@ jobs:
           echo "repo=$(get bbs_repo)" >> "$GITHUB_OUTPUT"
           echo "ref=$(get bbs_ref)" >> "$GITHUB_OUTPUT"
           echo "mode=$(get bbs_mode)" >> "$GITHUB_OUTPUT"
+          echo "loom=$(get loom_version)" >> "$GITHUB_OUTPUT"
+          echo "gradle=$(get gradle_version)" >> "$GITHUB_OUTPUT"
 
       # The addon compiles against BBS, which has no public Maven repository: build the right BBS
       # (a branch of the repository the target names) into the local Maven first.
@@ -61,8 +63,12 @@ jobs:
       - name: Build the addon
         run: |
           chmod +x gradlew
+          # BBS CML is built with a newer Loom (and Gradle) than the FS builds; the addon must match it.
+          if [ -n "${{ steps.t.outputs.gradle }}" ]; then
+            sed -i "s#gradle-[0-9.]*-bin.zip#gradle-${{ steps.t.outputs.gradle }}-bin.zip#" gradle/wrapper/gradle-wrapper.properties
+          fi
           set +e
-          ./gradlew build --no-daemon -Ptarget=${{ matrix.target }} -Dorg.gradle.jvmargs=-Xmx3G > build.log 2>&1
+          ./gradlew build --no-daemon -Ptarget=${{ matrix.target }} ${{ steps.t.outputs.loom && format('-Ploom_version={0}', steps.t.outputs.loom) || '' }} -Dorg.gradle.jvmargs=-Xmx3G > build.log 2>&1
           code=$?
           tail -n 40 build.log
           if [ "$code" != "0" ]; then
