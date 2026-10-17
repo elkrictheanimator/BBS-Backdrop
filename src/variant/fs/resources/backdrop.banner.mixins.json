@@ -4,7 +4,8 @@
 	"package": "com.backdrop.mixin",
 	"compatibilityLevel": "JAVA_17",
 	"client": [
-		"UILandingScreenMixin"
+		"UILandingScreenMixin",
+		"LandingBackdropMixin"
 	],
 	"injectors": {
 		"defaultRequire": 0

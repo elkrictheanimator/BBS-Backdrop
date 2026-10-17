@@ -17,11 +17,11 @@ public class BackdropSettings
     public static final String MOD_ID = "backdrop";
 
     private static ValueBoolean wallpaperEnabled, card;
-    private static ValueLink bannerImage;
+    private static ValueLink bannerImage, backdropImage;
     private static ValueFloat bannerZoom, bannerFocusX, bannerFocusY;
     private static ValueString bannerVideo, bannerUrl, wallpaperVideo, wallpaperUrl, ffmpeg, clientId, accessToken, refreshToken, expiresAt;
     private static ValueFloat bannerVolume, wallpaperVolume, darkness, panelOpacity;
-    private static ValueInt bannerSync, wallpaperSync, bannerStyle, bannerColorStart, bannerColorEnd, bannerHeight;
+    private static ValueInt bannerSync, wallpaperSync, backdropStyle, bannerStyle, bannerColorStart, bannerColorEnd, bannerHeight;
 
     /** The settings, made inside BBS's settings registration; {@code banner}: the BBS has a landing banner to set. */
     public static void register(SettingsBuilder builder, boolean banner)
@@ -35,6 +35,10 @@ public class BackdropSettings
             bannerColorEnd = builder.getInt("color_end", 0x8a3ffc);
             bannerImage = builder.getRL("image", null);
             bannerHeight = builder.getInt("height", BackdropConfig.BANNER_H, 90, 300);
+            backdropStyle = builder.getInt("backdrop_style", 0, 0, 3);
+            backdropImage = builder.getRL("backdrop_image", null);
+            backdropStyle.invisible();
+            backdropImage.invisible();
             bannerZoom = builder.getFloat("zoom", 1F, 1F, 4F);
             bannerFocusX = builder.getFloat("focus_x", 0.5F, 0F, 1F);
             bannerFocusY = builder.getFloat("focus_y", 0.5F, 0F, 1F);
@@ -92,6 +96,8 @@ public class BackdropSettings
                         c.colorEnd = bannerColorEnd.get();
                         c.image = bannerImage.get();
                         c.height = bannerHeight.get();
+                        c.backdropStyle = backdropStyle.get();
+                        c.backdropImage = backdropImage.get();
                         c.zoom = bannerZoom.get();
                         c.focusX = bannerFocusX.get();
                         c.focusY = bannerFocusY.get();
@@ -134,6 +140,8 @@ public class BackdropSettings
                         bannerColorEnd.set(c.colorEnd);
                         bannerImage.set(c.image);
                         bannerHeight.set(c.height);
+                        backdropStyle.set(c.backdropStyle);
+                        backdropImage.set(c.backdropImage);
                         bannerZoom.set(c.zoom);
                         bannerFocusX.set(c.focusX);
                         bannerFocusY.set(c.focusY);

@@ -1,4 +1,9 @@
 {
+	"backdrop.ui.outside": "Hình nền quanh banner",
+	"backdrop.ui.outside_default": "Ngoài: ánh sáng BBS",
+	"backdrop.ui.outside_gradient": "Ngoài: chuyển màu",
+	"backdrop.ui.outside_image": "Ngoài: ảnh",
+	"backdrop.ui.outside_wallpaper": "Ngoài: video nền",
 	"backdrop.config.title": "BBS Backdrop",
 	"backdrop.ui.title": "BBS Backdrop",
 	"backdrop.config.banner.title": "Banner",

@@ -1,4 +1,9 @@
 {
+	"backdrop.ui.outside": "Background around the banner",
+	"backdrop.ui.outside_default": "Outside: BBS lights",
+	"backdrop.ui.outside_gradient": "Outside: gradient",
+	"backdrop.ui.outside_image": "Outside: picture",
+	"backdrop.ui.outside_wallpaper": "Outside: wallpaper video",
 	"backdrop.config.title": "BBS Backdrop",
 	"backdrop.ui.title": "BBS Backdrop",
 	"backdrop.config.banner.title": "Banner",

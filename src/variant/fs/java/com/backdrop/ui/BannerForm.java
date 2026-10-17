@@ -103,6 +103,31 @@ public class BannerForm implements BackdropForm.BannerPart
         height.setValue(c.height);
         items.add(height);
 
+        /* What the landing screen sits on around the banner */
+        items.add(BackdropForm.label("backdrop.ui.outside"));
+
+        UICirculate outside = new UICirculate((b) ->
+        {
+            c.backdropStyle = b.getValue();
+            c.save();
+        });
+
+        for (String key : new String[] {"outside_default", "outside_gradient", "outside_image", "outside_wallpaper"})
+        {
+            outside.addLabel(L10n.lang("backdrop.ui." + key));
+        }
+
+        outside.setValue(c.backdropStyle);
+        items.add(outside);
+        items.add(new UIButton(L10n.lang("backdrop.ui.pick_image"), (b) ->
+            UITexturePicker.open(owner.getContext(), c.backdropImage, (link) ->
+            {
+                c.backdropImage = link;
+                c.backdropStyle = 2;
+                outside.setValue(2);
+                c.save();
+            })));
+
         /* The colour pickers live next to the overlay, so they would outlive the panel */
         cleanup.add(() ->
         {

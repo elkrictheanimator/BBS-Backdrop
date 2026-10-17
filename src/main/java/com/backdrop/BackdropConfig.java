@@ -56,6 +56,10 @@ public class BackdropConfig
     public float focusX = 0.5F;
     public float focusY = 0.5F;
     public int height = BANNER_H;
+
+    /** What the landing screen sits on around the banner: 0 BBS's own lights, 1 the two banner colours, 2 your picture, 3 the wallpaper video. */
+    public int backdropStyle;
+    public Link backdropImage;
     public Source wallpaper = new Source(0F);
     public float darkness = 0.4F;
     public float panelOpacity = 0.72F;
