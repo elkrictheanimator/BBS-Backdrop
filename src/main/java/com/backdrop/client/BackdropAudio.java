@@ -18,7 +18,9 @@ public class BackdropAudio
 {
     private static final int SAMPLE_RATE = 44100;
     private static final int FRAME_BYTES = 4;
-    private static final long IDLE_NANOS = 20_000_000_000L;
+    private static final long IDLE_NANOS = 30_000_000_000L;
+    /** No BBS screen drawn for this long: the sound pauses where it is (and the picture, which follows it, with it). */
+    private static final long STALE_NANOS = 400_000_000L;
     private static final long RETRY_MS = 5000;
 
     private static volatile long lastKeep;
@@ -75,7 +77,12 @@ public class BackdropAudio
 
         String input = !source.url.trim().isEmpty() ? source.url.trim() : new File(Assets.videos(), source.video.trim()).getAbsolutePath();
 
-        lastKeep = System.nanoTime();
+        /* The game window in the background: nothing is shown, so nothing is heard either */
+        if (net.minecraft.client.MinecraftClient.getInstance().isWindowFocused())
+        {
+            lastKeep = System.nanoTime();
+        }
+
         volume = source.volume;
         wantedInput = input;
         wantedKey = input;
@@ -160,6 +167,19 @@ public class BackdropAudio
 
             while (wanted(key) && (read = stream.read(bytes)) > 0)
             {
+                /* Not on a BBS screen (or the window is in the background): hold here, so sound and picture stay together */
+                if (System.nanoTime() - lastKeep > STALE_NANOS)
+                {
+                    device.stop();
+
+                    while (wanted(key) && System.nanoTime() - lastKeep > STALE_NANOS)
+                    {
+                        Thread.sleep(40);
+                    }
+
+                    device.start();
+                }
+
                 float level = volume;
 
                 for (int i = 0; i + 1 < read; i += 2)
