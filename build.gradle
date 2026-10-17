@@ -16,7 +16,7 @@ sourceSets.main.java.srcDir "src/variant/${project.variant}/java"
 sourceSets.main.resources.srcDir "src/variant/${project.variant}/resources"
 
 base {
-	archivesName = project.archives_base_name
+	archivesName = "BBS-BackDrop" + (project.target == "fs-1.20.4" ? "" : "-Port")
 }
 
 repositories {
