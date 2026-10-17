@@ -89,7 +89,7 @@ public class BackdropAudio
 
         if (thread == null || !thread.isAlive())
         {
-            thread = new Thread(BackdropAudio::run, "BBS Backdrop Sound");
+            thread = new Thread(BackdropAudio::run, "BBS Wallpaper Sound");
             thread.setDaemon(true);
             thread.start();
         }

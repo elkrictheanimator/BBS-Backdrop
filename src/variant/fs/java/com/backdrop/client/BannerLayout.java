@@ -61,7 +61,7 @@ public class BannerLayout
                 }
             }
 
-            System.out.println("[BBS Backdrop] banner height " + (BackdropConfig.BANNER_H + wanted) + " applied to " + moved + " parts");
+            System.out.println("[BBS Wallpaper] banner height " + (BackdropConfig.BANNER_H + wanted) + " applied to " + moved + " parts");
             APPLIED.put(screen, wanted);
             ((UIElement) screen).resize();
         }

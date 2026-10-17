@@ -2,7 +2,7 @@
 	"schemaVersion": 1,
 	"id": "backdrop",
 	"version": "${version}",
-	"name": "BBS Backdrop",
+	"name": "BBS Wallpaper",
 	"description": "Video with sound behind BBS (wallpaper and banner), and Spotify in it. An addon for BBS FS 2.7 (and BBS-RE).",
 	"license": "MIT",
 	"icon": "assets/backdrop/icon.png",

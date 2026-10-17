@@ -81,7 +81,7 @@ public class WallpaperRenderer
         if (!text.equals(lastNote))
         {
             lastNote = text;
-            System.out.println("[BBS Backdrop] " + text);
+            System.out.println("[BBS Wallpaper] " + text);
         }
     }
 

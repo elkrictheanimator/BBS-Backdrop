@@ -110,5 +110,5 @@ jobs:
           done
           gh release delete "v$version" --repo "$repo" --yes --cleanup-tag || true
           gh release create "v$version" jars/*.jar --repo "$repo" --latest \
-            --title "BBS BackDrop $version" \
-            --notes "BBS BackDrop $version. Jars: BBS-BackDrop-$version-fs-1.20.4.jar for BBS FS on Minecraft 1.20.4; BBS-BackDrop-Port-$version-fs-1.20.1.jar for BBS FS on Minecraft 1.20.1. Java 17."
+            --title "BBS Wallpaper $version" \
+            --notes "BBS Wallpaper $version. Jars: BBS-Wallpaper-$version-fs-1.20.4.jar for BBS FS on Minecraft 1.20.4; BBS-Wallpaper-Port-$version-fs-1.20.1.jar for BBS FS on Minecraft 1.20.1. Java 17."

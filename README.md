@@ -1,4 +1,4 @@
-# BBS BackDrop
+# BBS Wallpaper
 
 A client-side addon for **BBS FS** that turns the editor into something nicer to sit in front of for hours: a video with its own sound as the wallpaper behind every BBS screen, a fully customizable landing-screen banner, and a Spotify remote card.
 
@@ -35,21 +35,21 @@ Everything is optional and off by default until you pick something. If nothing i
 | Java | 17 or newer |
 | Other | Fabric Loader 0.16+, Fabric API, **ffmpeg** |
 
-ffmpeg decodes the video and the sound. If BBS already knows where ffmpeg is, BackDrop uses that; otherwise set the path in BackDrop's settings (General).
+ffmpeg decodes the video and the sound. If BBS already knows where ffmpeg is, Wallpaper uses that; otherwise set the path in Wallpaper's settings (General).
 
 ## Download
 
 Releases page: pick the jar that matches your Minecraft version.
 
-- `BBS-BackDrop-<version>-fs-1.20.4.jar` for Minecraft 1.20.4
-- `BBS-BackDrop-Port-<version>-fs-1.20.1.jar` for Minecraft 1.20.1
+- `BBS-Wallpaper-<version>-fs-1.20.4.jar` for Minecraft 1.20.4
+- `BBS-Wallpaper-Port-<version>-fs-1.20.1.jar` for Minecraft 1.20.1
 
 Put the jar in your `mods` folder next to BBS and Fabric API.
 
 ## How to use
 
 1. **Add a video.** Put an `.mp4` (H.264 works best) in BBS's assets folder under `video/`, i.e. `config/bbs/assets/video/` in most setups. Or paste a direct web address to a video file into the URL field of the window (the address wins over a chosen file).
-2. **Open the BackDrop window.** Go to BBS's landing screen and press the **play button on the banner**. The same settings also appear as the *BBS Backdrop* category in BBS's settings screen.
+2. **Open the Wallpaper window.** Go to BBS's landing screen and press the **play button on the banner**. The same settings also appear as the *BBS Wallpaper* category in BBS's settings screen.
 3. **Wallpaper.** Switch it on, pick the video, set the volume and the darkness / panel opacity to taste.
 4. **Banner.** Choose a style. For a picture, press *Pick image* and use the framing preview: drag to move, wheel to zoom. For a video, pick it in the banner video section.
 5. **Around the banner.** Under *Background around the banner*, choose BBS lights, gradient, picture or wallpaper video.
@@ -61,7 +61,7 @@ Put the jar in your `mods` folder next to BBS and Fabric API.
 Spotify cannot be played from inside a mod, so this is a remote for the Spotify app on your PC (or phone), which must be open and playing.
 
 1. Go to <https://developer.spotify.com/dashboard>, create an app (type: Web API) and add the Redirect URI `http://127.0.0.1:8977/callback`.
-2. Copy its **Client ID** into the Spotify section of the BackDrop window and press *Sign in*. Your browser opens to approve it.
+2. Copy its **Client ID** into the Spotify section of the Wallpaper window and press *Sign in*. Your browser opens to approve it.
 3. Start a song in Spotify. The card appears in the corner of BBS screens. You can hide it with the *Card* toggle.
 
 Your sign-in tokens are stored in BBS's own settings on your computer. The Client ID is yours; nothing goes through any server of the addon.
@@ -70,7 +70,7 @@ Your sign-in tokens are stored in BBS's own settings on your computer. The Clien
 
 - Client side only. It changes nothing in worlds and does not need to be installed on a server.
 - The sound belongs to the video, so a video without a sound track just plays silently.
-- If a video does not play, check that ffmpeg is found and that the file is a normal H.264 `.mp4`. Lines starting with `[BBS Backdrop]` in `logs/latest.log` say what the addon tried.
+- If a video does not play, check that ffmpeg is found and that the file is a normal H.264 `.mp4`. Lines starting with `[BBS Wallpaper]` in `logs/latest.log` say what the addon tried.
 - Made for BBS FS 2.7. It does not target mchorse's original BBS or BBS CML.
 
 ## License
