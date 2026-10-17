@@ -39,6 +39,7 @@ public class BackdropVideo
     private static final Map<String, BackdropVideo> VIDEOS = new HashMap<>();
 
     private static final Pattern SIZE_PATTERN = Pattern.compile("Video:.*?(\\d{2,5})x(\\d{2,5})");
+    private static final Pattern DURATION_PATTERN = Pattern.compile("Duration: (\\d+):(\\d+):(\\d+(?:\\.\\d+)?)");
     private static final Pattern FPS_PATTERN = Pattern.compile("(\\d+(?:\\.\\d+)?) fps");
 
     private static final int MAX_WIDTH = 854;
@@ -62,6 +63,10 @@ public class BackdropVideo
     private Texture texture;
     private Session session;
     private volatile long lastUsed;
+
+    /* When the video first started, and how long it is: a session begun later seeks to where it would be by now, so leaving the page and coming back does not start it over */
+    private volatile long epoch;
+    private volatile double duration;
     private volatile long failedAt;
     private volatile String error;
     private long soundUntil;
@@ -322,6 +327,16 @@ public class BackdropVideo
                     return;
                 }
 
+                long begun = System.nanoTime();
+
+                if (BackdropVideo.this.epoch == 0)
+                {
+                    BackdropVideo.this.epoch = begun;
+                }
+
+                double length = BackdropVideo.this.duration;
+                double resume = length > 1 ? ((begun - BackdropVideo.this.epoch) / 1e9) % length : 0;
+
                 fps = this.fps;
 
                 int w = Math.max(2, Math.min(size[0], MAX_WIDTH) & ~1);
@@ -337,7 +352,7 @@ public class BackdropVideo
 
                 ProcessBuilder builder = new ProcessBuilder(
                     ffmpeg, "-hide_banner", "-loglevel", "quiet", "-nostdin",
-                    "-stream_loop", "-1", "-i", input,
+                    "-stream_loop", "-1", "-ss", String.format(java.util.Locale.ROOT, "%.3f", resume), "-i", input,
                     "-an", "-sn", "-dn",
                     "-vf", "fps=" + fps + ",scale=" + w + ":" + h + ":flags=fast_bilinear",
                     "-f", "rawvideo", "-pix_fmt", "rgba", "pipe:1"
@@ -545,6 +560,13 @@ public class BackdropVideo
 
             int w = Integer.parseInt(size.group(1));
             int h = Integer.parseInt(size.group(2));
+
+            Matcher length = DURATION_PATTERN.matcher(output);
+
+            if (length.find())
+            {
+                BackdropVideo.this.duration = Integer.parseInt(length.group(1)) * 3600.0 + Integer.parseInt(length.group(2)) * 60.0 + Double.parseDouble(length.group(3));
+            }
 
             Matcher rate = FPS_PATTERN.matcher(output);
 
