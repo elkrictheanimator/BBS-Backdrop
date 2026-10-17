@@ -313,6 +313,63 @@ public class BackdropVideo
             }
         }
 
+        private boolean smoothed;
+        private double smooth;
+        private double lastRaw;
+        private long lastNow;
+        private long lastChange;
+
+        /**
+         * The sound device reports its position in coarse steps, and a picture that follows the steps
+         * moves like stop-motion. Between reports the clock runs on by itself and is only eased toward
+         * the reported position; when the sound stands still (paused) it stands still too.
+         */
+        private double smooth(long now, double raw)
+        {
+            if (!this.smoothed)
+            {
+                this.smoothed = true;
+                this.smooth = raw;
+                this.lastRaw = raw;
+                this.lastNow = now;
+                this.lastChange = now;
+
+                return raw;
+            }
+
+            double dt = (now - this.lastNow) / 1e9;
+
+            this.lastNow = now;
+
+            if (raw != this.lastRaw)
+            {
+                this.lastRaw = raw;
+                this.lastChange = now;
+            }
+
+            if (now - this.lastChange > 400_000_000L)
+            {
+                this.smooth = raw;
+            }
+            else
+            {
+                this.smooth += dt;
+
+                double error = raw - this.smooth;
+
+                if (Math.abs(error) > 0.25)
+                {
+                    this.smooth = raw;
+                }
+                else
+                {
+                    this.smooth += error * Math.min(1D, dt * 4);
+                }
+            }
+
+            return this.smooth;
+        }
+
         /** The time, in seconds, the picture should be at: the sound's position while it plays, else the wall clock. */
         public double clock()
         {
@@ -326,7 +383,7 @@ public class BackdropVideo
 
                 if (position >= 0)
                 {
-                    this.lastClock = Math.max(0, position - this.audioBase);
+                    this.lastClock = this.smooth(now, Math.max(0, position - this.audioBase));
 
                     return this.lastClock;
                 }
