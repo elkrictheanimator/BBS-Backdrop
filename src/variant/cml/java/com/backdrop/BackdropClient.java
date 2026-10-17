@@ -23,6 +23,6 @@ public class BackdropClient extends BBSClientAddon
     @Override
     protected void registerDashboardPanels(RegisterDashboardPanelsEvent event)
     {
-        event.dashboard.getPanels().registerPanel(new UIBackdropPanel(event.dashboard), L10n.lang("backdrop.ui.title"), Icons.PLAY);
+        event.dashboard.panels.registerPanel(new UIBackdropPanel(event.dashboard), L10n.lang("backdrop.ui.title"), Icons.PLAY);
     }
 }

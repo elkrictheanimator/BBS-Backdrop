@@ -28,7 +28,7 @@ public class BackdropSettings
     {
         if (banner)
         {
-            builder.category("banner", Icons.FILM);
+            Cat.make(builder, "banner", Icons.FILM);
 
             bannerStyle = builder.getInt("style", 0, 0, 4);
             bannerColorStart = builder.getInt("color_start", 0x1b2a4e);
@@ -53,7 +53,7 @@ public class BackdropSettings
 
         }
 
-            builder.category("wallpaper", Icons.IMAGE);
+            Cat.make(builder, "wallpaper", Icons.IMAGE);
 
             wallpaperEnabled = builder.getBoolean("enabled", true);
             wallpaperVideo = builder.getString("video", "");
@@ -63,7 +63,7 @@ public class BackdropSettings
             darkness = builder.getFloat("darkness", 0.4F, 0F, 1F);
             panelOpacity = builder.getFloat("panel_opacity", 0.72F, 0F, 1F);
 
-            builder.category("spotify", Icons.SOUND);
+            Cat.make(builder, "spotify", Icons.SOUND);
 
             clientId = builder.getString("client_id", "");
             card = builder.getBoolean("card", true);
@@ -74,7 +74,7 @@ public class BackdropSettings
             expiresAt = builder.getString("expires_at", "0");
             expiresAt.invisible();
 
-            builder.category("general", Icons.GEAR);
+            Cat.make(builder, "general", Icons.GEAR);
 
             ffmpeg = builder.getString("ffmpeg", "");
 
