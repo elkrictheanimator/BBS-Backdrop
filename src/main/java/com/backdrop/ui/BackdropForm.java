@@ -7,6 +7,7 @@ import mchorse.bbs_mod.l10n.L10n;
 import mchorse.bbs_mod.l10n.keys.IKey;
 import mchorse.bbs_mod.ui.framework.elements.UIElement;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIButton;
+import mchorse.bbs_mod.ui.framework.elements.buttons.UICirculate;
 import mchorse.bbs_mod.ui.framework.elements.buttons.UIToggle;
 import mchorse.bbs_mod.ui.framework.elements.input.UITrackpad;
 import mchorse.bbs_mod.ui.framework.elements.overlay.UIOverlay;
@@ -57,6 +58,21 @@ public class BackdropForm
         items.add(trackpad(c.darkness, (v) -> c.darkness = v));
         items.add(label("backdrop.ui.panel_opacity"));
         items.add(trackpad(c.panelOpacity, (v) -> c.panelOpacity = v));
+        items.add(label("backdrop.ui.quality"));
+
+        UICirculate quality = new UICirculate((b) ->
+        {
+            c.quality = b.getValue();
+            c.save();
+        });
+
+        for (String key : new String[] {"quality_low", "quality_medium", "quality_high"})
+        {
+            quality.addLabel(L10n.lang("backdrop.ui." + key));
+        }
+
+        quality.setValue(c.quality);
+        items.add(quality);
 
         if (banner != null)
         {

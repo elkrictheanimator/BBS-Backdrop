@@ -1,4 +1,10 @@
 {
+	"backdrop.ui.quality": "Video quality (lower = lighter on weak PCs)",
+	"backdrop.ui.quality_low": "Low (480p, 20 fps)",
+	"backdrop.ui.quality_medium": "Medium (854p, 30 fps)",
+	"backdrop.ui.quality_high": "High (1280p, 60 fps)",
+	"backdrop.config.general.quality": "Video quality",
+	"backdrop.config.general.quality-comment": "0 low, 1 medium, 2 high",
 	"backdrop.ui.outside": "Background around the banner",
 	"backdrop.ui.outside_default": "Outside: BBS lights",
 	"backdrop.ui.outside_gradient": "Outside: gradient",

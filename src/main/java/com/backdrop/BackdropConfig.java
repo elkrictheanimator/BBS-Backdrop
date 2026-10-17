@@ -57,6 +57,9 @@ public class BackdropConfig
     public float focusY = 0.5F;
     public int height = BANNER_H;
 
+    /** How hard the video is on the machine: 0 low (480 wide, 20 fps), 1 medium (854, 30), 2 high (1280, 60). */
+    public int quality = 1;
+
     /** What the landing screen sits on around the banner: 0 BBS's own lights, 1 the two banner colours, 2 your picture, 3 the wallpaper video. */
     public int backdropStyle;
     public Link backdropImage;

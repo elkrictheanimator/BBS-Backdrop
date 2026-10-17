@@ -1,5 +1,6 @@
 package com.backdrop.client;
 
+import com.backdrop.BackdropConfig;
 import mchorse.bbs_mod.graphics.texture.Texture;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
@@ -42,7 +43,8 @@ public class BackdropVideo
     private static final Pattern DURATION_PATTERN = Pattern.compile("Duration: (\\d+):(\\d+):(\\d+(?:\\.\\d+)?)");
     private static final Pattern FPS_PATTERN = Pattern.compile("(\\d+(?:\\.\\d+)?) fps");
 
-    private static final int MAX_WIDTH = 854;
+    private static final int[] QUALITY_WIDTH = {480, 854, 1280};
+    private static final double[] QUALITY_FPS = {20, 30, 60};
     private static final double MAX_FPS = 60;
     private static final double DEFAULT_FPS = 30;
 
@@ -121,7 +123,7 @@ public class BackdropVideo
         Session current = this.session;
 
         /* The sound switched on or off, or the session ended: start a fresh one */
-        if (current != null && (current.sound != wantSound || current.finished || current.synced != synced || (synced && current.audioGeneration != BackdropAudio.generation())))
+        if (current != null && (current.sound != wantSound || current.finished || current.synced != synced || current.quality != BackdropConfig.get().quality || (synced && current.audioGeneration != BackdropAudio.generation())))
         {
             current.shutdown();
             current = null;
@@ -241,6 +243,7 @@ public class BackdropVideo
         public volatile boolean finished;
         public volatile float volume;
 
+        public final int quality = BackdropConfig.get().quality;
         public volatile double shown;
         public volatile boolean hasShown;
         public long lagSince;
@@ -483,9 +486,11 @@ public class BackdropVideo
                 double elapsed = this.synced ? this.audioBase : (begun - BackdropVideo.this.epoch) / 1e9;
                 double resume = length > 1 ? elapsed % length : 0;
 
-                fps = this.fps;
+                int cap = Math.max(0, Math.min(2, this.quality));
 
-                int w = Math.max(2, Math.min(size[0], MAX_WIDTH) & ~1);
+                fps = Math.min(this.fps, QUALITY_FPS[cap]);
+
+                int w = Math.max(2, Math.min(size[0], QUALITY_WIDTH[cap]) & ~1);
                 int h = Math.max(2, (int) Math.round(size[1] * (w / (double) size[0])) & ~1);
 
                 this.width = w;

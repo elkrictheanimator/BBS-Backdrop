@@ -1,4 +1,10 @@
 {
+	"backdrop.ui.quality": "Chất lượng video (thấp = nhẹ cho máy yếu)",
+	"backdrop.ui.quality_low": "Thấp (480p, 20 fps)",
+	"backdrop.ui.quality_medium": "Vừa (854p, 30 fps)",
+	"backdrop.ui.quality_high": "Cao (1280p, 60 fps)",
+	"backdrop.config.general.quality": "Chất lượng video",
+	"backdrop.config.general.quality-comment": "0 thấp, 1 vừa, 2 cao",
 	"backdrop.ui.outside": "Hình nền quanh banner",
 	"backdrop.ui.outside_default": "Ngoài: ánh sáng BBS",
 	"backdrop.ui.outside_gradient": "Ngoài: chuyển màu",

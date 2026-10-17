@@ -21,7 +21,7 @@ public class BackdropSettings
     private static ValueFloat bannerZoom, bannerFocusX, bannerFocusY;
     private static ValueString bannerVideo, bannerUrl, wallpaperVideo, wallpaperUrl, ffmpeg, clientId, accessToken, refreshToken, expiresAt;
     private static ValueFloat bannerVolume, wallpaperVolume, darkness, panelOpacity;
-    private static ValueInt bannerSync, wallpaperSync, backdropStyle, bannerStyle, bannerColorStart, bannerColorEnd, bannerHeight;
+    private static ValueInt quality, bannerSync, wallpaperSync, backdropStyle, bannerStyle, bannerColorStart, bannerColorEnd, bannerHeight;
 
     /** The settings, made inside BBS's settings registration; {@code banner}: the BBS has a landing banner to set. */
     public static void register(SettingsBuilder builder, boolean banner)
@@ -80,6 +80,7 @@ public class BackdropSettings
 
             Cat.make(builder, "general", Icons.GEAR);
 
+            quality = builder.getInt("quality", 1, 0, 2);
             ffmpeg = builder.getString("ffmpeg", "");
 
         /* From here on the settings screen is the truth */
@@ -114,6 +115,7 @@ public class BackdropSettings
                     c.wallpaper.sync = wallpaperSync.get();
                     c.darkness = darkness.get();
                     c.panelOpacity = panelOpacity.get();
+                    c.quality = quality.get();
                     c.ffmpeg = ffmpeg.get();
                     c.spotify.clientId = clientId.get();
                     c.spotify.card = card.get();
@@ -158,6 +160,7 @@ public class BackdropSettings
                     wallpaperSync.set(c.wallpaper.sync);
                     darkness.set(c.darkness);
                     panelOpacity.set(c.panelOpacity);
+                    quality.set(c.quality);
                     ffmpeg.set(c.ffmpeg);
                     clientId.set(c.spotify.clientId);
                     card.set(c.spotify.card);
